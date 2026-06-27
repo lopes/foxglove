@@ -64,12 +64,12 @@ uv run python -m foxglove generate \
 Manages honeytokens on a Thinkst Canary console. Tokens minted by Foxglove carry the memo prefix `#foxglove`, which `thinkst list` filters on client-side.
 
 ```
-foxglove thinkst create --console <c> --kind <k> --flock <flock_id> --memo "<text>"
-foxglove thinkst list   --console <c> [--flock <flock_id>] [--kind <k>] [--json]
-foxglove thinkst remove --console <c> <canarytoken-id>
+foxglove thinkst create --domain-hash <h> --kind <k> --flock <flock_id> --memo "<text>"
+foxglove thinkst list   --domain-hash <h> [--flock <flock_id>] [--kind <k>] [--json]
+foxglove thinkst remove --domain-hash <h> <canarytoken-id>
 ```
 
-`--console` is the URL prefix in `https://<console>.canary.tools/api/v1/...` and must match `^[a-z0-9-]+$`.
+`--domain-hash` is your Console's DOMAIN — the unique hash prefixing the URL `https://<domain-hash>.canary.tools/api/v1/...`. Must match `^[a-z0-9-]+$`.
 
 Auth: env var `THINKST_API_KEY` sent as `X-Canary-Auth-Token` HTTP header.
 

@@ -11,7 +11,7 @@ from foxglove.thinkst.models import CreateTokenResult, TokenSummary
 
 CREATE_ARGV = [
     "thinkst", "create",
-    "--console", "acme",
+    "--domain-hash", "acme",
     "--kind", "dns",
     "--flock", "flock:default",
     "--memo", "Q3 billing report",
@@ -66,7 +66,7 @@ def test_create_prefixes_memo_with_foxglove_tag(monkeypatch: pytest.MonkeyPatch)
     assert call_kwargs["flock_id"] == "flock:default"
 
 
-def test_create_passes_console_and_token_to_client(monkeypatch: pytest.MonkeyPatch):
+def test_create_passes_domain_hash_and_token_to_client(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("THINKST_API_KEY", "my-secret")
     mock_client = MagicMock()
     mock_client.create_token.return_value = _make_create_result()
@@ -75,7 +75,7 @@ def test_create_passes_console_and_token_to_client(monkeypatch: pytest.MonkeyPat
     with patch("foxglove.thinkst.runner.ThinkstClient", factory):
         run(CREATE_ARGV)
 
-    factory.assert_called_once_with(console="acme", auth_token="my-secret")
+    factory.assert_called_once_with(domain_hash="acme", auth_token="my-secret")
 
 
 def test_create_prints_url_when_present(
@@ -107,7 +107,7 @@ def test_create_api_error_returns_thinkst_error(monkeypatch: pytest.MonkeyPatch)
     assert result == EXIT_THINKST_ERROR
 
 
-LIST_ARGV = ["thinkst", "list", "--console", "acme"]
+LIST_ARGV = ["thinkst", "list", "--domain-hash", "acme"]
 
 
 def _summary(**overrides: object) -> TokenSummary:
@@ -223,7 +223,7 @@ def test_list_api_error_returns_thinkst_error(monkeypatch: pytest.MonkeyPatch):
     assert result == EXIT_THINKST_ERROR
 
 
-REMOVE_ARGV = ["thinkst", "remove", "--console", "acme", "tok-x"]
+REMOVE_ARGV = ["thinkst", "remove", "--domain-hash", "acme", "tok-x"]
 
 
 def test_remove_missing_auth_token_returns_env_error(monkeypatch: pytest.MonkeyPatch):

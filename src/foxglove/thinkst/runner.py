@@ -22,7 +22,7 @@ def run_thinkst(
         )
         return EXIT_ENV_ERROR
 
-    client = ThinkstClient(console=args.console, auth_token=auth_token)
+    client = ThinkstClient(domain_hash=args.domain_hash, auth_token=auth_token)
     try:
         if isinstance(args, ThinkstCreateArgs):
             return _run_create(args, client)

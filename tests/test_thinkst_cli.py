@@ -7,7 +7,7 @@ from foxglove.thinkst.cli import ThinkstCreateArgs, ThinkstListArgs, ThinkstRemo
 
 def _create_argv(**overrides: str) -> list[str]:
     defaults = {
-        "--console": "acme",
+        "--domain-hash": "acme",
         "--kind": "dns",
         "--flock": "flock:default",
         "--memo": "Q3 billing report",
@@ -19,17 +19,17 @@ def _create_argv(**overrides: str) -> list[str]:
 def test_create_happy_path_parses_all_args():
     result = parse_args(_create_argv())
     assert isinstance(result, ThinkstCreateArgs)
-    assert result.console == "acme"
+    assert result.domain_hash == "acme"
     assert result.kind == "dns"
     assert result.flock_id == "flock:default"
     assert result.memo == "Q3 billing report"
 
 
-def test_create_missing_console_returns_error():
-    argv = [a for a in _create_argv() if a != "--console" and a != "acme"]
+def test_create_missing_domain_hash_returns_error():
+    argv = [a for a in _create_argv() if a != "--domain-hash" and a != "acme"]
     result = parse_args(argv)
     assert isinstance(result, CliError)
-    assert "console" in result.message.lower()
+    assert "domain" in result.message.lower()
 
 
 def test_create_missing_kind_returns_error():
@@ -53,18 +53,18 @@ def test_create_missing_memo_returns_error():
     assert "memo" in result.message.lower()
 
 
-@pytest.mark.parametrize("console", ["acme", "acme-corp", "acme123", "a"])
-def test_valid_console_values(console: str):
-    result = parse_args(_create_argv(**{"--console": console}))
+@pytest.mark.parametrize("value", ["acme", "acme-corp", "acme123", "a"])
+def test_valid_domain_hash_values(value: str):
+    result = parse_args(_create_argv(**{"--domain-hash": value}))
     assert isinstance(result, ThinkstCreateArgs)
-    assert result.console == console
+    assert result.domain_hash == value
 
 
-@pytest.mark.parametrize("console", ["", "Acme", "acme.corp", "acme_corp", "acme corp", "a" * 65])
-def test_invalid_console_values(console: str):
-    result = parse_args(_create_argv(**{"--console": console}))
+@pytest.mark.parametrize("value", ["", "Acme", "acme.corp", "acme_corp", "acme corp", "a" * 65])
+def test_invalid_domain_hash_values(value: str):
+    result = parse_args(_create_argv(**{"--domain-hash": value}))
     assert isinstance(result, CliError)
-    assert "console" in result.message.lower()
+    assert "domain" in result.message.lower()
 
 
 @pytest.mark.parametrize("kind", sorted(SUPPORTED_KINDS))
@@ -105,22 +105,22 @@ def test_empty_flock_returns_error():
 
 
 def _list_argv(extra: list[str] | None = None) -> list[str]:
-    return ["thinkst", "list", "--console", "acme"] + (extra or [])
+    return ["thinkst", "list", "--domain-hash", "acme"] + (extra or [])
 
 
 def test_list_happy_path():
     result = parse_args(_list_argv())
     assert isinstance(result, ThinkstListArgs)
-    assert result.console == "acme"
+    assert result.domain_hash == "acme"
     assert result.flock_id is None
     assert result.kind is None
     assert result.json_output is False
 
 
-def test_list_missing_console_returns_error():
+def test_list_missing_domain_hash_returns_error():
     result = parse_args(["thinkst", "list"])
     assert isinstance(result, CliError)
-    assert "console" in result.message.lower()
+    assert "domain" in result.message.lower()
 
 
 def test_list_with_flock():
@@ -147,30 +147,30 @@ def test_list_with_json_flag():
     assert result.json_output is True
 
 
-def test_list_invalid_console_returns_error():
-    result = parse_args(["thinkst", "list", "--console", "Acme.Corp"])
+def test_list_invalid_domain_hash_returns_error():
+    result = parse_args(["thinkst", "list", "--domain-hash", "Acme.Corp"])
     assert isinstance(result, CliError)
-    assert "console" in result.message.lower()
+    assert "domain" in result.message.lower()
 
 
 def test_remove_happy_path():
-    result = parse_args(["thinkst", "remove", "--console", "acme", "tok-abc"])
+    result = parse_args(["thinkst", "remove", "--domain-hash", "acme", "tok-abc"])
     assert isinstance(result, ThinkstRemoveArgs)
-    assert result.console == "acme"
+    assert result.domain_hash == "acme"
     assert result.canarytoken == "tok-abc"
 
 
 def test_remove_missing_id_returns_error():
-    result = parse_args(["thinkst", "remove", "--console", "acme"])
+    result = parse_args(["thinkst", "remove", "--domain-hash", "acme"])
     assert isinstance(result, CliError)
 
 
-def test_remove_missing_console_returns_error():
+def test_remove_missing_domain_hash_returns_error():
     result = parse_args(["thinkst", "remove", "tok-abc"])
     assert isinstance(result, CliError)
-    assert "console" in result.message.lower()
+    assert "domain" in result.message.lower()
 
 
 def test_remove_empty_id_returns_error():
-    result = parse_args(["thinkst", "remove", "--console", "acme", ""])
+    result = parse_args(["thinkst", "remove", "--domain-hash", "acme", ""])
     assert isinstance(result, CliError)

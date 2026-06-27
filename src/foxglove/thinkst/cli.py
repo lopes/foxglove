@@ -5,15 +5,15 @@ from dataclasses import dataclass
 from foxglove.cli import CliError
 from foxglove.thinkst import SUPPORTED_KINDS
 
-CONSOLE_PATTERN: re.Pattern[str] = re.compile(r"^[a-z0-9-]+$")
-MAX_CONSOLE_LEN: int = 64
+DOMAIN_HASH_PATTERN: re.Pattern[str] = re.compile(r"^[a-z0-9-]+$")
+MAX_DOMAIN_HASH_LEN: int = 64
 MAX_MEMO_LEN: int = 256
 THINKST_ACTIONS: frozenset[str] = frozenset({"create", "list", "remove"})
 
 
 @dataclass(frozen=True)
 class ThinkstCreateArgs:
-    console: str
+    domain_hash: str
     kind: str
     flock_id: str
     memo: str
@@ -21,7 +21,7 @@ class ThinkstCreateArgs:
 
 @dataclass(frozen=True)
 class ThinkstListArgs:
-    console: str
+    domain_hash: str
     flock_id: str | None
     kind: str | None
     json_output: bool
@@ -29,24 +29,27 @@ class ThinkstListArgs:
 
 @dataclass(frozen=True)
 class ThinkstRemoveArgs:
-    console: str
+    domain_hash: str
     canarytoken: str
 
 
-def _validate_console(value: str) -> str | None:
+def _validate_domain_hash(value: str) -> str | None:
     if not value:
-        return "console must not be empty"
-    if len(value) > MAX_CONSOLE_LEN:
-        return f"console must be at most {MAX_CONSOLE_LEN} characters"
-    if not CONSOLE_PATTERN.match(value):
-        return f"console must match {CONSOLE_PATTERN.pattern} (lowercase letters, digits, hyphens)"
+        return "domain-hash must not be empty"
+    if len(value) > MAX_DOMAIN_HASH_LEN:
+        return f"domain-hash must be at most {MAX_DOMAIN_HASH_LEN} characters"
+    if not DOMAIN_HASH_PATTERN.match(value):
+        return (
+            f"domain-hash must match {DOMAIN_HASH_PATTERN.pattern} "
+            "(lowercase letters, digits, hyphens)"
+        )
     return None
 
 
 def _validate_create(args: argparse.Namespace) -> ThinkstCreateArgs | CliError:
-    console_error = _validate_console(args.console)
-    if console_error is not None:
-        return CliError(message=console_error)
+    domain_error = _validate_domain_hash(args.domain_hash)
+    if domain_error is not None:
+        return CliError(message=domain_error)
 
     if args.kind not in SUPPORTED_KINDS:
         supported = ", ".join(sorted(SUPPORTED_KINDS))
@@ -63,7 +66,7 @@ def _validate_create(args: argparse.Namespace) -> ThinkstCreateArgs | CliError:
         return CliError(message=f"memo must be at most {MAX_MEMO_LEN} characters")
 
     return ThinkstCreateArgs(
-        console=args.console,
+        domain_hash=args.domain_hash,
         kind=args.kind,
         flock_id=args.flock,
         memo=args.memo,
@@ -71,9 +74,9 @@ def _validate_create(args: argparse.Namespace) -> ThinkstCreateArgs | CliError:
 
 
 def _validate_list(args: argparse.Namespace) -> ThinkstListArgs | CliError:
-    console_error = _validate_console(args.console)
-    if console_error is not None:
-        return CliError(message=console_error)
+    domain_error = _validate_domain_hash(args.domain_hash)
+    if domain_error is not None:
+        return CliError(message=domain_error)
 
     if args.kind is not None and args.kind not in SUPPORTED_KINDS:
         supported = ", ".join(sorted(SUPPORTED_KINDS))
@@ -82,7 +85,7 @@ def _validate_list(args: argparse.Namespace) -> ThinkstListArgs | CliError:
         )
 
     return ThinkstListArgs(
-        console=args.console,
+        domain_hash=args.domain_hash,
         flock_id=args.flock,
         kind=args.kind,
         json_output=args.json,
@@ -90,15 +93,15 @@ def _validate_list(args: argparse.Namespace) -> ThinkstListArgs | CliError:
 
 
 def _validate_remove(args: argparse.Namespace) -> ThinkstRemoveArgs | CliError:
-    console_error = _validate_console(args.console)
-    if console_error is not None:
-        return CliError(message=console_error)
+    domain_error = _validate_domain_hash(args.domain_hash)
+    if domain_error is not None:
+        return CliError(message=domain_error)
 
     if not args.canarytoken:
         return CliError(message="canarytoken id must not be empty")
 
     return ThinkstRemoveArgs(
-        console=args.console,
+        domain_hash=args.domain_hash,
         canarytoken=args.canarytoken,
     )
 
@@ -119,19 +122,19 @@ def parse_thinkst_args(
     sub = parser.add_subparsers(dest="action", required=True)
 
     create = sub.add_parser("create", exit_on_error=False)
-    create.add_argument("--console", required=True)
+    create.add_argument("--domain-hash", required=True)
     create.add_argument("--kind", required=True)
     create.add_argument("--flock", required=True)
     create.add_argument("--memo", required=True)
 
     list_p = sub.add_parser("list", exit_on_error=False)
-    list_p.add_argument("--console", required=True)
+    list_p.add_argument("--domain-hash", required=True)
     list_p.add_argument("--flock", default=None)
     list_p.add_argument("--kind", default=None)
     list_p.add_argument("--json", action="store_true", default=False)
 
     remove = sub.add_parser("remove", exit_on_error=False)
-    remove.add_argument("--console", required=True)
+    remove.add_argument("--domain-hash", required=True)
     remove.add_argument("canarytoken")
 
     try:

@@ -37,9 +37,9 @@ uv run python -m foxglove generate \
 
 # Manage honeytokens on a Thinkst Canary console
 uv run python -m foxglove thinkst create \
-  --console <your-console> --kind dns --flock flock:default --memo "..."
-uv run python -m foxglove thinkst list --console <your-console>
-uv run python -m foxglove thinkst remove --console <your-console> <canarytoken-id>
+  --domain-hash <your-domain-hash> --kind dns --flock flock:default --memo "..."
+uv run python -m foxglove thinkst list --domain-hash <your-domain-hash>
+uv run python -m foxglove thinkst remove --domain-hash <your-domain-hash> <canarytoken-id>
 
 # Run tests
 uv run pytest

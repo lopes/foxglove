@@ -20,13 +20,13 @@ class ThinkstClient:
     def __init__(
         self,
         *,
-        console: str,
+        domain_hash: str,
         auth_token: str,
         transport: httpx.BaseTransport | None = None,
         timeout: float = 30.0,
     ) -> None:
         self._client = httpx.Client(
-            base_url=f"https://{console}.canary.tools",
+            base_url=f"https://{domain_hash}.canary.tools",
             timeout=timeout,
             transport=transport,
             headers={"X-Canary-Auth-Token": auth_token},

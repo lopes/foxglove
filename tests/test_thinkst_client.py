@@ -10,11 +10,11 @@ from foxglove.thinkst.models import CreateTokenResult, TokenSummary
 def _client_with_handler(
     handler: Callable[[httpx.Request], httpx.Response],
     *,
-    console: str = "acme",
+    domain_hash: str = "acme",
     auth_token: str = "secret",
 ) -> ThinkstClient:
     return ThinkstClient(
-        console=console,
+        domain_hash=domain_hash,
         auth_token=auth_token,
         transport=httpx.MockTransport(handler),
     )
@@ -40,7 +40,7 @@ def test_create_token_posts_to_correct_url():
             "hostname": "abc.canarytokens.com",
         })
 
-    client = _client_with_handler(handler, console="acme")
+    client = _client_with_handler(handler, domain_hash="acme")
     client.create_token(kind="dns", memo="test", flock_id="flock:default")
 
     assert len(captured) == 1

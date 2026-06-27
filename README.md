@@ -128,21 +128,21 @@ If you ever decouple creation from list/remove (e.g. an automation only mints, h
 
 See [Thinkst — How does the API work?](https://help.canary.tools/hc/en-gb/articles/360012727537-How-does-the-API-work) and [Flock API Keys](https://help.canary.tools/hc/en-gb/articles/7111549805213-Flock-API-Keys).
 
-`--console` is the URL prefix of your console: in `https://acme.canary.tools/api/v1/...`, the console is `acme`.
+`--domain-hash` is your Console's DOMAIN — the unique hash that prefixes its URL. In `https://acme.canary.tools/api/v1/...`, the domain-hash is `acme`.
 
 ```sh
 # Mint a honeytoken
 uv run python -m foxglove thinkst create \
-  --console acme \
+  --domain-hash acme \
   --kind dns \
   --flock flock:default \
   --memo "Q3 billing report"
 
 # List Foxglove-tagged honeytokens
-uv run python -m foxglove thinkst list --console acme [--flock flock:abc] [--kind dns] [--json]
+uv run python -m foxglove thinkst list --domain-hash acme [--flock flock:abc] [--kind dns] [--json]
 
 # Remove one by id
-uv run python -m foxglove thinkst remove --console acme <canarytoken-id>
+uv run python -m foxglove thinkst remove --domain-hash acme <canarytoken-id>
 ```
 
 Supported `--kind` values (v1, callback-only): `dns`, `http`, `aws-id`, `slack-api`, `qr-code`, `windows-dir`, `wireguard`, `credit-card`, `mysql-dump`, `svn`, `sql`.

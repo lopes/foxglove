@@ -3,6 +3,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
 
+<p align="center">
+  <img src="assets/foxglove-logo.svg" alt="Foxglove" width="160">
+</p>
+
 **Foxglove generates high-fidelity decoy documents — *honeyfiles* — and optionally mints and embeds Thinkst Canary callbacks — *honeytokens* — into them.** It pairs Anthropic's Claude (for context-aware content) with Thinkst Canary (for verifiable detonations), so defenders can drop authentic-looking bait into their environments and get real alerts the moment an adversary touches it.
 
 Inspired by Cliff Stoll's *[The Cuckoo's Egg](https://lopes.id/log/review-cuckoos-egg/)*, Foxglove aligns with the **MITRE Engage** framework to *Expose*, *Affect*, and *Elicit* adversary behaviour through deception.

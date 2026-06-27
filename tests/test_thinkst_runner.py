@@ -6,7 +6,7 @@ from foxglove.__main__ import run
 from foxglove.models import EXIT_ENV_ERROR, EXIT_SUCCESS, EXIT_THINKST_ERROR
 from foxglove.thinkst import FOXGLOVE_TAG
 from foxglove.thinkst.client import ThinkstApiError
-from foxglove.thinkst.models import CreateTokenResult
+from foxglove.thinkst.models import CreateTokenResult, TokenSummary
 
 
 CREATE_ARGV = [
@@ -103,5 +103,121 @@ def test_create_api_error_returns_thinkst_error(monkeypatch: pytest.MonkeyPatch)
 
     with patch("foxglove.thinkst.runner.ThinkstClient", return_value=mock_client):
         result = run(CREATE_ARGV)
+
+    assert result == EXIT_THINKST_ERROR
+
+
+LIST_ARGV = ["thinkst", "list", "--console", "acme"]
+
+
+def _summary(**overrides: object) -> TokenSummary:
+    base: dict[str, object] = {
+        "canarytoken": "t-1",
+        "kind": "dns",
+        "flock_id": "flock:default",
+        "memo": f"{FOXGLOVE_TAG} marketing decoy",
+        "created_printable": "2026-06-27 12:00:00 (UTC)",
+    }
+    return TokenSummary.model_validate({**base, **overrides})
+
+
+def test_list_missing_auth_token_returns_env_error(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("THINKST_AUTH_TOKEN", raising=False)
+    result = run(LIST_ARGV)
+    assert result == EXIT_ENV_ERROR
+
+
+def test_list_filters_to_foxglove_tagged_only(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    monkeypatch.setenv("THINKST_AUTH_TOKEN", "secret")
+    mock_client = MagicMock()
+    mock_client.list_tokens.return_value = [
+        _summary(canarytoken="ours", memo=f"{FOXGLOVE_TAG} mine"),
+        _summary(canarytoken="someone-else", memo="other team's token"),
+        _summary(canarytoken="ours-2", memo=f"{FOXGLOVE_TAG} second one"),
+    ]
+
+    with patch("foxglove.thinkst.runner.ThinkstClient", return_value=mock_client):
+        result = run(LIST_ARGV)
+
+    assert result == EXIT_SUCCESS
+    captured = capsys.readouterr()
+    assert "ours" in captured.out
+    assert "ours-2" in captured.out
+    assert "someone-else" not in captured.out
+
+
+def test_list_empty_result_succeeds(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    monkeypatch.setenv("THINKST_AUTH_TOKEN", "secret")
+    mock_client = MagicMock()
+    mock_client.list_tokens.return_value = []
+
+    with patch("foxglove.thinkst.runner.ThinkstClient", return_value=mock_client):
+        result = run(LIST_ARGV)
+
+    assert result == EXIT_SUCCESS
+
+
+def test_list_passes_flock_to_client(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("THINKST_AUTH_TOKEN", "secret")
+    mock_client = MagicMock()
+    mock_client.list_tokens.return_value = []
+
+    with patch("foxglove.thinkst.runner.ThinkstClient", return_value=mock_client):
+        run(LIST_ARGV + ["--flock", "flock:abc"])
+
+    mock_client.list_tokens.assert_called_once_with(flock_id="flock:abc")
+
+
+def test_list_filters_by_kind_client_side(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    monkeypatch.setenv("THINKST_AUTH_TOKEN", "secret")
+    mock_client = MagicMock()
+    mock_client.list_tokens.return_value = [
+        _summary(canarytoken="d1", kind="dns", memo=f"{FOXGLOVE_TAG} a"),
+        _summary(canarytoken="h1", kind="http", memo=f"{FOXGLOVE_TAG} b"),
+    ]
+
+    with patch("foxglove.thinkst.runner.ThinkstClient", return_value=mock_client):
+        run(LIST_ARGV + ["--kind", "dns"])
+
+    captured = capsys.readouterr()
+    assert "d1" in captured.out
+    assert "h1" not in captured.out
+
+
+def test_list_json_output(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    import json
+    monkeypatch.setenv("THINKST_AUTH_TOKEN", "secret")
+    mock_client = MagicMock()
+    mock_client.list_tokens.return_value = [
+        _summary(canarytoken="t-json", memo=f"{FOXGLOVE_TAG} hi"),
+    ]
+
+    with patch("foxglove.thinkst.runner.ThinkstClient", return_value=mock_client):
+        run(LIST_ARGV + ["--json"])
+
+    captured = capsys.readouterr()
+    data = json.loads(captured.out)
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert data[0]["canarytoken"] == "t-json"
+    assert data[0]["memo"] == f"{FOXGLOVE_TAG} hi"
+    assert "created_printable" in data[0]
+
+
+def test_list_api_error_returns_thinkst_error(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("THINKST_AUTH_TOKEN", "secret")
+    mock_client = MagicMock()
+    mock_client.list_tokens.side_effect = ThinkstApiError("server down")
+
+    with patch("foxglove.thinkst.runner.ThinkstClient", return_value=mock_client):
+        result = run(LIST_ARGV)
 
     assert result == EXIT_THINKST_ERROR

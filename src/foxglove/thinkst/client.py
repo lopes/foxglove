@@ -3,7 +3,9 @@ from typing import cast
 import httpx
 from pydantic import ValidationError
 
-from foxglove.thinkst.models import CreateTokenResult
+from foxglove.thinkst.models import CreateTokenResult, TokenSummary
+
+LIST_PAGE_LIMIT: int = 100
 
 
 class ThinkstApiError(Exception):
@@ -39,6 +41,44 @@ class ThinkstClient:
             return CreateTokenResult.model_validate(token)
         except ValidationError as e:
             raise ThinkstApiError(f"create response shape invalid: {e}") from e
+
+    def list_tokens(self, *, flock_id: str | None = None) -> list[TokenSummary]:
+        results: list[TokenSummary] = []
+        cursor: str | None = None
+        while True:
+            params: dict[str, str | int] = {"limit": LIST_PAGE_LIMIT}
+            if flock_id is not None:
+                params["flock_id"] = flock_id
+            if cursor is not None:
+                params["cursor"] = cursor
+
+            response = self._client.get(
+                "/api/v1/canarytokens/paginate",
+                params=params,
+            )
+            payload = self._parse_payload(response)
+
+            tokens_raw = payload.get("canarytokens") or payload.get("tokens") or []
+            if not isinstance(tokens_raw, list):
+                raise ThinkstApiError(
+                    "paginate response missing 'canarytokens'/'tokens' array"
+                )
+
+            for raw in tokens_raw:
+                try:
+                    results.append(TokenSummary.model_validate(raw))
+                except ValidationError:
+                    continue
+
+            cursor_obj = payload.get("cursor")
+            if not isinstance(cursor_obj, dict):
+                break
+            next_cursor = cursor_obj.get("next")
+            if not isinstance(next_cursor, str) or not next_cursor:
+                break
+            cursor = next_cursor
+
+        return results
 
     def close(self) -> None:
         self._client.close()

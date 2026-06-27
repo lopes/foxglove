@@ -8,7 +8,7 @@ from foxglove.thinkst import SUPPORTED_KINDS
 CONSOLE_PATTERN: re.Pattern[str] = re.compile(r"^[a-z0-9-]+$")
 MAX_CONSOLE_LEN: int = 64
 MAX_MEMO_LEN: int = 256
-THINKST_ACTIONS: frozenset[str] = frozenset({"create"})
+THINKST_ACTIONS: frozenset[str] = frozenset({"create", "list"})
 
 
 @dataclass(frozen=True)
@@ -17,6 +17,14 @@ class ThinkstCreateArgs:
     kind: str
     flock_id: str
     memo: str
+
+
+@dataclass(frozen=True)
+class ThinkstListArgs:
+    console: str
+    flock_id: str | None
+    kind: str | None
+    json_output: bool
 
 
 def _validate_console(value: str) -> str | None:
@@ -56,7 +64,26 @@ def _validate_create(args: argparse.Namespace) -> ThinkstCreateArgs | CliError:
     )
 
 
-def parse_thinkst_args(argv: list[str]) -> ThinkstCreateArgs | CliError:
+def _validate_list(args: argparse.Namespace) -> ThinkstListArgs | CliError:
+    console_error = _validate_console(args.console)
+    if console_error is not None:
+        return CliError(message=console_error)
+
+    if args.kind is not None and args.kind not in SUPPORTED_KINDS:
+        supported = ", ".join(sorted(SUPPORTED_KINDS))
+        return CliError(
+            message=f"unsupported kind '{args.kind}'; supported kinds: {supported}"
+        )
+
+    return ThinkstListArgs(
+        console=args.console,
+        flock_id=args.flock,
+        kind=args.kind,
+        json_output=args.json,
+    )
+
+
+def parse_thinkst_args(argv: list[str]) -> "ThinkstCreateArgs | ThinkstListArgs | CliError":
     if len(argv) < 2:
         return CliError(
             message=f"thinkst requires an action; one of: {', '.join(sorted(THINKST_ACTIONS))}"
@@ -75,6 +102,12 @@ def parse_thinkst_args(argv: list[str]) -> ThinkstCreateArgs | CliError:
     create.add_argument("--flock", required=True)
     create.add_argument("--memo", required=True)
 
+    list_p = sub.add_parser("list", exit_on_error=False)
+    list_p.add_argument("--console", required=True)
+    list_p.add_argument("--flock", default=None)
+    list_p.add_argument("--kind", default=None)
+    list_p.add_argument("--json", action="store_true", default=False)
+
     try:
         args = parser.parse_args(argv[1:])
     except argparse.ArgumentError as e:
@@ -82,4 +115,6 @@ def parse_thinkst_args(argv: list[str]) -> ThinkstCreateArgs | CliError:
 
     if args.action == "create":
         return _validate_create(args)
+    if args.action == "list":
+        return _validate_list(args)
     return CliError(message=f"'{args.action}' is not yet implemented")

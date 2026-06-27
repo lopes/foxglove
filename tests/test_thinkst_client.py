@@ -4,7 +4,7 @@ import httpx
 import pytest
 
 from foxglove.thinkst.client import ThinkstApiError, ThinkstClient
-from foxglove.thinkst.models import CreateTokenResult
+from foxglove.thinkst.models import CreateTokenResult, TokenSummary
 
 
 def _client_with_handler(
@@ -148,3 +148,94 @@ def test_create_token_raises_on_http_4xx():
     client = _client_with_handler(handler)
     with pytest.raises(ThinkstApiError):
         client.create_token(kind="dns", memo="m", flock_id="flock:default")
+
+
+def _list_response(tokens: list[dict[str, object]], next_cursor: object = None) -> httpx.Response:
+    return httpx.Response(
+        200,
+        json={
+            "result": "success",
+            "canarytokens": tokens,
+            "cursor": {"next": next_cursor, "next_link": None, "prev": None, "prev_link": None},
+        },
+    )
+
+
+def _summary_dict(**overrides: object) -> dict[str, object]:
+    base: dict[str, object] = {
+        "canarytoken": "t-1",
+        "kind": "dns",
+        "flock_id": "flock:default",
+        "memo": "#foxglove memo",
+        "created_printable": "2026-06-27 12:00:00 (UTC)",
+    }
+    return {**base, **overrides}
+
+
+def test_list_tokens_single_page():
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "GET"
+        assert request.url.path == "/api/v1/canarytokens/paginate"
+        return _list_response([_summary_dict(canarytoken="t-1"), _summary_dict(canarytoken="t-2")])
+
+    client = _client_with_handler(handler)
+    tokens = client.list_tokens()
+
+    assert len(tokens) == 2
+    assert all(isinstance(t, TokenSummary) for t in tokens)
+    assert tokens[0].canarytoken == "t-1"
+    assert tokens[1].canarytoken == "t-2"
+
+
+def test_list_tokens_follows_cursor():
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        cursor = request.url.params.get("cursor")
+        if cursor is None:
+            return _list_response([_summary_dict(canarytoken="page1")], next_cursor="cursor-page2")
+        if cursor == "cursor-page2":
+            return _list_response([_summary_dict(canarytoken="page2")], next_cursor=None)
+        raise AssertionError(f"unexpected cursor {cursor!r}")
+
+    client = _client_with_handler(handler)
+    tokens = client.list_tokens()
+
+    assert len(calls) == 2
+    assert [t.canarytoken for t in tokens] == ["page1", "page2"]
+
+
+def test_list_tokens_passes_flock_id_query_param():
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return _list_response([])
+
+    client = _client_with_handler(handler)
+    client.list_tokens(flock_id="flock:specific")
+
+    assert captured[0].url.params.get("flock_id") == "flock:specific"
+
+
+def test_list_tokens_omits_flock_id_when_none():
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return _list_response([])
+
+    client = _client_with_handler(handler)
+    client.list_tokens()
+
+    assert "flock_id" not in captured[0].url.params
+
+
+def test_list_tokens_raises_on_error_result():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"result": "error", "message": "bad auth"})
+
+    client = _client_with_handler(handler)
+    with pytest.raises(ThinkstApiError):
+        client.list_tokens()

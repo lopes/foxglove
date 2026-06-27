@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from foxglove.models import DEFAULT_MODEL, DEFAULT_PASSWORDS, MAX_FILES, SUPPORTED_FORMATS
 
 if TYPE_CHECKING:
-    from foxglove.thinkst.cli import ThinkstCreateArgs
+    from foxglove.thinkst.cli import ThinkstCreateArgs, ThinkstListArgs
 
 OPERATION_PATTERN: re.Pattern[str] = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,254}$")
 SUBCOMMANDS: frozenset[str] = frozenset({"generate", "thinkst"})
@@ -100,7 +100,7 @@ def _validate_generate(args: argparse.Namespace) -> CliArgs | CliError:
     )
 
 
-def parse_args(argv: list[str]) -> "CliArgs | ThinkstCreateArgs | CliError":
+def parse_args(argv: list[str]) -> "CliArgs | ThinkstCreateArgs | ThinkstListArgs | CliError":
     if not argv:
         return CliError(
             message="no subcommand given; use 'foxglove generate ...' or 'foxglove thinkst ...'"

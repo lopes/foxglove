@@ -1,6 +1,6 @@
-# Antlion — Technical Design Document
+# Foxglove — Technical Design Document
 
-This document captures the agreed design decisions for Antlion v1. It serves as the single source of truth for implementation.
+This document captures the agreed design decisions for Foxglove v1. It serves as the single source of truth for implementation.
 
 
 ## Workflow
@@ -14,7 +14,7 @@ CLI validation → Context ingestion → Campaign planning (batched, Pydantic-en
 ## CLI Interface
 
 ```
-uv run python -m antlion \
+uv run python -m foxglove \
   --base-dir /tmp \
   --operation op_alpha \
   --num-files 99 \
@@ -78,13 +78,13 @@ uv run python -m antlion \
 
 ## Resume Behavior
 
-1. On startup, Antlion checks if `<base-dir>/<operation>/MANIFEST.json` exists.
+1. On startup, Foxglove checks if `<base-dir>/<operation>/MANIFEST.json` exists.
 2. **If manifest exists and `--resume` is passed:** resume automatically — load manifest, skip files that already exist on disk, generate the rest.
 3. **If manifest exists and `--resume` is NOT passed:** prompt the user interactively (y/n). If "yes", resume. If "no", delete all files under the operation root (including manifest) and start fresh.
 4. **If no manifest exists and `--resume` is passed:** start fresh with a message: `"New operation <name>; starting generation"`.
 5. **If no manifest exists and `--resume` is NOT passed:** start fresh (normal behavior).
 
-On resume, Antlion loads the manifest and iterates through its entries. If the file exists on disk, skip it. If not, generate it.
+On resume, Foxglove loads the manifest and iterates through its entries. If the file exists on disk, skip it. If not, generate it.
 
 
 ## Dry-Run Behavior
@@ -140,7 +140,7 @@ Written to `<base-dir>/<operation>/MANIFEST.json`. Always generated on every run
 
 ## Duplicate File Path Handling
 
-If the LLM generates duplicate file paths in the plan, Antlion applies macOS-style deduplication:
+If the LLM generates duplicate file paths in the plan, Foxglove applies macOS-style deduplication:
 
 - First occurrence: `Report.md`
 - Second occurrence: `Report (2).md`
@@ -199,10 +199,10 @@ Deduplication is applied during plan post-processing, before any files are writt
 ## Project Layout
 
 ```
-antlion/
-├── src/antlion/
+foxglove/
+├── src/foxglove/
 │   ├── __init__.py         # Package exports
-│   ├── __main__.py         # Entrypoint (python -m antlion)
+│   ├── __main__.py         # Entrypoint (python -m foxglove)
 │   ├── cli.py              # CLI argument parsing and validation
 │   ├── planner.py          # Campaign planning (LLM structured output)
 │   ├── generator.py        # Content generation orchestration

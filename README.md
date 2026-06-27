@@ -1,24 +1,24 @@
-# Antlion
+# Foxglove
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
 
-Antlion is an AI-powered adversary engagement tool designed to automatically generate high-fidelity, context-aware decoy files.
+Foxglove is an AI-powered adversary engagement tool designed to automatically generate high-fidelity, context-aware decoy files.
 
-Strongly inspired by Cliff Stoll's 1986 story, *[The Cuckoo's Egg](https://lopes.id/log/review-cuckoos-egg/)*, Antlion automates the creation of convincing fake data to buy defenders time, track adversaries, and map their behavior.
+Strongly inspired by Cliff Stoll's 1986 story, *[The Cuckoo's Egg](https://lopes.id/log/review-cuckoos-egg/)*, Foxglove automates the creation of convincing fake data to buy defenders time, track adversaries, and map their behavior.
 
 By strategically placing these files in your environment, you align with the **MITRE Engage** framework to *Expose* adversary presence, *Affect* their movement, and *Elicit* actionable intelligence. Once an adversary interacts with these files, defenders can trigger alerts, deploy embedded honeytokens, mislead the attacker with fake intelligence, or simply delay their lateral movement.
 
 > [!NOTE]
-> Antlion is designed for authorized adversary engagement, defensive research, and authorized penetration testing. Do not use this tool on networks where you do not have explicit permission to deploy deceptive artifacts.
+> Foxglove is designed for authorized adversary engagement, defensive research, and authorized penetration testing. Do not use this tool on networks where you do not have explicit permission to deploy deceptive artifacts.
 
 
 ## How it Works
-Creating convincing decoy files manually is tedious and repetitive. Antlion leverages Anthropic's Claude to handle this dynamically:
+Creating convincing decoy files manually is tedious and repetitive. Foxglove leverages Anthropic's Claude to handle this dynamically:
 
 1. **Context Ingestion:** The agent reads operator-defined parameters: base directory, operation name, target file count, file formats, and the specific narrative context (e.g., mimicked teams, corporate environment, tech stack).
 2. **Campaign Planning (Structured Data):** The LLM generates a structured roadmap of the decoys, defining realistic file paths, names, types, and summaries. This step forces a structured JSON output enforced via Pydantic, guaranteeing the LLM's response maps perfectly to internal data objects. For encrypted files, passwords are assigned and stored in the manifest.
-3. **Content Generation:** Antlion iterates through the parsed plan, prompting the LLM to write convincing, context-aligned content for each specific file.
+3. **Content Generation:** Foxglove iterates through the parsed plan, prompting the LLM to write convincing, context-aligned content for each specific file.
 4. **File Assembly:** The tool compiles the generated text into the requested formats and writes them to the target operation directory.
 
 Operators can easily review the generated directory and manually inject specific honeytokens (like canary tokens or fake AWS keys) into the highest-value decoys.
@@ -40,8 +40,8 @@ Operators can easily review the generated directory and manually inject specific
 Requires [uv](https://github.com/astral-sh/uv) and Python 3.14+.
 
 ```sh
-git clone https://github.com/lopes/antlion
-cd antlion
+git clone https://github.com/lopes/foxglove
+cd foxglove
 uv sync
 ```
 
@@ -53,7 +53,7 @@ export ANTHROPIC_API_KEY="sk-ant-your-api-key-here"
 
 ## Usage
 ```sh
-uv run python -m antlion \
+uv run python -m foxglove \
   --base-dir /tmp \
   --operation op_alpha \
   --num-files 99 \
@@ -84,7 +84,7 @@ This generates a structured directory at `/tmp/op_alpha` containing subfolders a
 Preview the campaign plan without creating any files:
 
 ```sh
-uv run python -m antlion \
+uv run python -m foxglove \
   --base-dir /tmp \
   --operation op_alpha \
   --num-files 10 \
@@ -99,7 +99,7 @@ uv run python -m antlion \
 If generation is interrupted, resume where you left off:
 
 ```sh
-uv run python -m antlion \
+uv run python -m foxglove \
   --base-dir /tmp \
   --operation op_alpha \
   --num-files 10 \
@@ -131,7 +131,7 @@ See [DESIGN.md](DESIGN.md) for the full technical specification and [CLAUDE.md](
 
 
 ## Known Limitations
-- **Context Window Constraints:** For large operations (100+ files), Antlion batches the campaign planning phase in groups of 50 to maintain output quality.
+- **Context Window Constraints:** For large operations (100+ files), Foxglove batches the campaign planning phase in groups of 50 to maintain output quality.
 - **Sequential Generation:** Files are generated one at a time (no concurrency in v1).
 
 

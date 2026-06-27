@@ -9,10 +9,10 @@ truststore.inject_into_ssl()
 
 import anthropic
 
-from antlion.cli import CliArgs, CliError, parse_args
-from antlion.generator import generate_all
-from antlion.manifest import manifest_exists, read_manifest, write_manifest
-from antlion.models import (
+from foxglove.cli import CliArgs, CliError, parse_args
+from foxglove.generator import generate_all
+from foxglove.manifest import manifest_exists, read_manifest, write_manifest
+from foxglove.models import (
     EXIT_API_ERROR,
     EXIT_CLI_ERROR,
     EXIT_ENV_ERROR,
@@ -22,8 +22,8 @@ from antlion.models import (
     Manifest,
     OperationParameters,
 )
-from antlion.planner import PlanningError, plan_campaign
-from antlion.resume import ResumeAction, determine_resume_action
+from foxglove.planner import PlanningError, plan_campaign
+from foxglove.resume import ResumeAction, determine_resume_action
 
 
 def _build_operation_parameters(cli: CliArgs) -> OperationParameters:

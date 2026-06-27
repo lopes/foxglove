@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from antlion.cli import CliArgs, CliError, parse_args
-from antlion.models import DEFAULT_MODEL, DEFAULT_PASSWORDS, MAX_FILES, SUPPORTED_FORMATS
+from foxglove.cli import CliArgs, CliError, parse_args
+from foxglove.models import DEFAULT_MODEL, DEFAULT_PASSWORDS, MAX_FILES, SUPPORTED_FORMATS
 
 
 def _valid_argv(**overrides: str) -> list[str]:

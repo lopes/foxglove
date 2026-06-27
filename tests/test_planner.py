@@ -4,8 +4,8 @@ import anthropic
 import pytest
 from anthropic.types import ToolUseBlock
 
-from antlion.models import CampaignPlan, OperationParameters
-from antlion.planner import (
+from foxglove.models import CampaignPlan, OperationParameters
+from foxglove.planner import (
     PlanningError,
     build_planning_prompt,
     compute_batches,

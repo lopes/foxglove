@@ -1,8 +1,8 @@
-# Antlion Implementation Plan
+# Foxglove Implementation Plan
 
 ## Context
 
-Antlion is a greenfield project — only a stub `main.py` and empty `pyproject.toml` exist. The goal is to implement the full tool as specified in [DESIGN.md](../DESIGN.md), following strict TDD (RED → GREEN → REFACTOR) and functional programming principles from [CLAUDE.md](../CLAUDE.md).
+Foxglove is a greenfield project — only a stub `main.py` and empty `pyproject.toml` exist. The goal is to implement the full tool as specified in [DESIGN.md](../DESIGN.md), following strict TDD (RED → GREEN → REFACTOR) and functional programming principles from [CLAUDE.md](../CLAUDE.md).
 
 ---
 
@@ -13,7 +13,7 @@ No tests — establish build tooling so `uv run pytest` runs.
 1. Update `pyproject.toml`: add all runtime deps (`anthropic`, `pydantic`, `python-docx`, `openpyxl`, `python-pptx`, `reportlab`, `pypdf`) and dev deps (`pytest`). Configure `src/` as package source.
 2. Run `uv sync` to install everything. `uv` manages the lockfile — no `requirements.txt` needed.
 3. Create directory structure: `src/`, `tests/`, with `__init__.py` files as needed.
-4. Move `main.py` → `src/antlion.py`. Run `uv run pytest` to confirm zero tests collected.
+4. Move `main.py` → `src/foxglove.py`. Run `uv run pytest` to confirm zero tests collected.
 
 ---
 
@@ -146,7 +146,7 @@ Each writer is a pure function: `write_<fmt>(content, path) -> None`. All create
 
 ---
 
-## Phase 9: Entrypoint — `src/antlion.py`
+## Phase 9: Entrypoint — `src/foxglove.py`
 
 **Tests:** `tests/test_entrypoint.py`
 
@@ -212,7 +212,7 @@ After each increment: `uv run pytest` must pass (all green).
 
 Final verification:
 - `uv run pytest` — all tests pass
-- `uv run python src/antlion.py --help` — shows all parameters
+- `uv run python src/foxglove.py --help` — shows all parameters
 - Manual run with `--dry-run` and a real API key to verify LLM integration
 - Manual run generating a few files across all 9 formats
 
@@ -227,4 +227,4 @@ Final verification:
 | `src/generator.py` | Sequential generation loop with resume, error resilience, progress output |
 | `src/manifest.py` | Manifest read/write |
 | `src/write_*.py` | One writer per format (9 files) |
-| `src/antlion.py` | Main orchestration loop: CLI → env check → resume logic → plan → manifest → generate → exit code |
+| `src/foxglove.py` | Main orchestration loop: CLI → env check → resume logic → plan → manifest → generate → exit code |

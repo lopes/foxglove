@@ -4,8 +4,8 @@ from pathlib import Path
 import anthropic
 from anthropic.types import TextBlock
 
-from antlion.models import FileEntry, Manifest
-from antlion.writers import get_writer
+from foxglove.models import FileEntry, Manifest
+from foxglove.writers import get_writer
 
 
 def generate_file_content(

@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from antlion.generator import generate_all, generate_file_content, write_generated_file
-from antlion.models import FileEntry, Manifest, OperationParameters
+from foxglove.generator import generate_all, generate_file_content, write_generated_file
+from foxglove.models import FileEntry, Manifest, OperationParameters
 
 
 def _make_text_block() -> MagicMock:

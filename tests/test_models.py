@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from antlion.models import (
+from foxglove.models import (
     BATCH_SIZE,
     DEFAULT_MODEL,
     DEFAULT_PASSWORDS,

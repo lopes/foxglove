@@ -3,7 +3,7 @@ import os
 import re
 from dataclasses import dataclass
 
-from antlion.models import DEFAULT_MODEL, DEFAULT_PASSWORDS, MAX_FILES, SUPPORTED_FORMATS
+from foxglove.models import DEFAULT_MODEL, DEFAULT_PASSWORDS, MAX_FILES, SUPPORTED_FORMATS
 
 OPERATION_PATTERN: re.Pattern[str] = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,254}$")
 
@@ -29,7 +29,7 @@ class CliError:
 
 
 def parse_args(argv: list[str]) -> CliArgs | CliError:
-    parser = argparse.ArgumentParser(prog="antlion", exit_on_error=False)
+    parser = argparse.ArgumentParser(prog="foxglove", exit_on_error=False)
     parser.add_argument("--base-dir", required=True)
     parser.add_argument("--operation", required=True)
     parser.add_argument("--num-files", required=True, type=int)

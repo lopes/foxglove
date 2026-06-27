@@ -1,4 +1,4 @@
-# Antlion Implementation Todo
+# Foxglove Implementation Todo
 
 ## Progress Tracker
 
@@ -11,7 +11,7 @@
 - [x] **Phase 6:** Campaign planner in `src/planner.py`
 - [x] **Phase 7:** Content generator in `src/generator.py`
 - [x] **Phase 8:** Resume & dry-run logic
-- [x] **Phase 9:** Entrypoint orchestration in `src/antlion.py`
+- [x] **Phase 9:** Entrypoint orchestration in `src/foxglove.py`
 - [x] **Phase 10:** Integration smoke tests
 
 ## Detailed Increments
@@ -20,7 +20,7 @@
 - [x] 0.1 Update `pyproject.toml` with all deps
 - [x] 0.2 Run `uv sync`
 - [x] 0.3 Create `src/`, `tests/` directories
-- [x] 0.4 Move `main.py` → `src/antlion.py`, confirm `uv run pytest` runs
+- [x] 0.4 Move `main.py` → `src/foxglove.py`, confirm `uv run pytest` runs
 
 ### Phase 1: Pydantic Models
 - [x] 1.1 `SUPPORTED_FORMATS` frozenset

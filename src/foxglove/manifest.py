@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from antlion.models import Manifest
+from foxglove.models import Manifest
 
 MANIFEST_FILENAME = "MANIFEST.json"
 

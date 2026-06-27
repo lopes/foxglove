@@ -1,14 +1,14 @@
 from collections.abc import Callable
 
-from antlion.writers.conf import write_conf
-from antlion.writers.docx import write_docx
-from antlion.writers.epdf import write_epdf
-from antlion.writers.json import write_json
-from antlion.writers.md import write_md
-from antlion.writers.pdf import write_pdf
-from antlion.writers.pptx import write_pptx
-from antlion.writers.xlsx import write_xlsx
-from antlion.writers.xml import write_xml
+from foxglove.writers.conf import write_conf
+from foxglove.writers.docx import write_docx
+from foxglove.writers.epdf import write_epdf
+from foxglove.writers.json import write_json
+from foxglove.writers.md import write_md
+from foxglove.writers.pdf import write_pdf
+from foxglove.writers.pptx import write_pptx
+from foxglove.writers.xlsx import write_xlsx
+from foxglove.writers.xml import write_xml
 
 _WRITERS: dict[str, Callable[..., None]] = {
     "md": write_md,

@@ -5,7 +5,7 @@ import anthropic
 from anthropic.types import Message, ToolUseBlock, ToolParam
 from pydantic import ValidationError
 
-from antlion.models import BATCH_SIZE, CampaignPlan, FileEntry, OperationParameters
+from foxglove.models import BATCH_SIZE, CampaignPlan, FileEntry, OperationParameters
 
 
 class PlanningError(Exception):

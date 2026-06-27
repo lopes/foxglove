@@ -1,5 +1,5 @@
-from antlion.models import CampaignPlan, FileEntry
-from antlion.planner import (
+from foxglove.models import CampaignPlan, FileEntry
+from foxglove.planner import (
     assign_epdf_passwords,
     deduplicate_paths,
     merge_plans,

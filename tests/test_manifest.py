@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from antlion.manifest import manifest_exists, read_manifest, write_manifest
-from antlion.models import FileEntry, Manifest, OperationParameters
+from foxglove.manifest import manifest_exists, read_manifest, write_manifest
+from foxglove.models import FileEntry, Manifest, OperationParameters
 
 
 def _make_manifest() -> Manifest:

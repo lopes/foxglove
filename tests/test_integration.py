@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from anthropic.types import TextBlock, ToolUseBlock
 
-from antlion.__main__ import run
-from antlion.models import EXIT_SUCCESS, Manifest
+from foxglove.__main__ import run
+from foxglove.models import EXIT_SUCCESS, Manifest
 
 
 def _make_plan_response(files: list[dict[str, str]]) -> MagicMock:
@@ -69,7 +69,7 @@ def test_end_to_end_creates_all_files_and_manifest(
         *[_make_content_response(c) for c in CONTENT_RESPONSES],
     ]
 
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=mock_client):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=mock_client):
         result = run(_base_argv(tmp_path))
 
     assert result == EXIT_SUCCESS
@@ -103,7 +103,7 @@ def test_resume_regenerates_only_missing_files(
         *[_make_content_response(c) for c in CONTENT_RESPONSES],
     ]
 
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=mock_client):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=mock_client):
         run(_base_argv(tmp_path))
 
     op_dir = tmp_path / "op_integration"
@@ -116,7 +116,7 @@ def test_resume_regenerates_only_missing_files(
         _make_content_response("# Regenerated readme"),
     ]
 
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=mock_client_2):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=mock_client_2):
         result = run([*_base_argv(tmp_path), "--resume"])
 
     assert result == EXIT_SUCCESS
@@ -134,7 +134,7 @@ def test_dry_run_creates_no_files(
     mock_client = MagicMock()
     mock_client.messages.create.return_value = _make_plan_response(PLAN_FILES)
 
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=mock_client):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=mock_client):
         result = run([*_base_argv(tmp_path), "--dry-run"])
 
     assert result == EXIT_SUCCESS
@@ -153,7 +153,7 @@ def test_dry_run_prints_plan_to_stdout(
     mock_client = MagicMock()
     mock_client.messages.create.return_value = _make_plan_response(PLAN_FILES)
 
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=mock_client):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=mock_client):
         run([*_base_argv(tmp_path), "--dry-run"])
 
     captured = capsys.readouterr()

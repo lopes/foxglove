@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Antlion is an AI-powered adversary engagement tool that generates high-fidelity, context-aware decoy files using Anthropic's Claude. It automates creation of convincing fake data for defensive security operations, aligned with the MITRE Engage framework.
+Foxglove is an AI-powered adversary engagement tool that generates high-fidelity, context-aware decoy files using Anthropic's Claude. It automates creation of convincing fake data for defensive security operations, aligned with the MITRE Engage framework.
 
 **Workflow:** Context ingestion → Campaign planning (structured JSON via Pydantic) → Content generation per file → File assembly to disk.
 
@@ -17,7 +17,7 @@ Antlion is an AI-powered adversary engagement tool that generates high-fidelity,
 uv sync
 
 # Run the tool
-uv run python -m antlion \
+uv run python -m foxglove \
   --base-dir /tmp \
   --operation op_alpha \
   --num-files 10 \

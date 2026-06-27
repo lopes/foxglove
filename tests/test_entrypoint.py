@@ -5,8 +5,8 @@ import anthropic
 import pytest
 from anthropic.types import TextBlock, ToolUseBlock
 
-from antlion.__main__ import run
-from antlion.models import (
+from foxglove.__main__ import run
+from foxglove.models import (
     EXIT_API_ERROR,
     EXIT_CLI_ERROR,
     EXIT_ENV_ERROR,
@@ -100,7 +100,7 @@ def test_successful_run_returns_exit_0(tmp_path: Path, monkeypatch: pytest.Monke
         _make_content_response("[main]\nkey=value"),
     ]
 
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=mock_client):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=mock_client):
         result = run(_valid_argv(tmp_path))
 
     assert result == EXIT_SUCCESS
@@ -127,7 +127,7 @@ def test_partial_completion_returns_exit_4(
         Exception("Generation failed"),
     ]
 
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=mock_client):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=mock_client):
         result = run(_valid_argv(tmp_path))
 
     assert result == EXIT_PARTIAL
@@ -142,7 +142,7 @@ def test_planning_error_returns_exit_5(tmp_path: Path, monkeypatch: pytest.Monke
     response.stop_reason = "end_turn"
     mock_client.messages.create.return_value = response
 
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=mock_client):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=mock_client):
         result = run(_valid_argv(tmp_path))
 
     assert result == EXIT_PLANNING_ERROR
@@ -160,7 +160,7 @@ def test_api_error_during_planning_returns_exit_3(
         body=None,
     )
 
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=mock_client):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=mock_client):
         result = run(_valid_argv(tmp_path))
 
     assert result == EXIT_API_ERROR
@@ -181,7 +181,7 @@ def test_manifest_rewritten_on_resume(tmp_path: Path, monkeypatch: pytest.Monkey
         _make_content_response("# Notes again"),
     ]
 
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=mock_client):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=mock_client):
         run(_valid_argv(tmp_path))
 
     op_dir = tmp_path / "op_test"
@@ -193,7 +193,7 @@ def test_manifest_rewritten_on_resume(tmp_path: Path, monkeypatch: pytest.Monkey
     (op_dir / "it" / "notes.md").write_text("pre-existing")
 
     resume_argv = _valid_argv(tmp_path) + ["--resume"]
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=mock_client):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=mock_client):
         result = run(resume_argv)
 
     assert result == EXIT_SUCCESS
@@ -220,7 +220,7 @@ def test_dry_run_resume_shows_only_remaining_files(
         _make_content_response("[main]"),
     ]
 
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=mock_client):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=mock_client):
         run(_valid_argv(tmp_path))
 
     op_dir = tmp_path / "op_test"
@@ -231,7 +231,7 @@ def test_dry_run_resume_shows_only_remaining_files(
     capsys.readouterr()  # clear previous output
 
     resume_dry_argv = _valid_argv(tmp_path) + ["--resume", "--dry-run"]
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=mock_client):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=mock_client):
         result = run(resume_dry_argv)
 
     assert result == EXIT_SUCCESS
@@ -252,7 +252,7 @@ def test_resume_with_unreadable_manifest_errors(
     manifest_path.write_text("{invalid json}")
 
     resume_argv = _valid_argv(tmp_path) + ["--resume"]
-    with patch("antlion.__main__.anthropic.Anthropic", return_value=MagicMock()):
+    with patch("foxglove.__main__.anthropic.Anthropic", return_value=MagicMock()):
         result = run(resume_argv)
 
     assert result != EXIT_SUCCESS

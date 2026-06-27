@@ -7,7 +7,7 @@ SUPPORTED_FORMATS: frozenset[str] = frozenset(
 MAX_FILES: int = 200
 BATCH_SIZE: int = 50
 
-DEFAULT_MODEL: str = "claude-sonnet-4-20250514"
+DEFAULT_MODEL: str = "claude-haiku-4-5"
 DEFAULT_PASSWORDS: tuple[str, ...] = ("abc123", "root")
 
 EXIT_SUCCESS: int = 0

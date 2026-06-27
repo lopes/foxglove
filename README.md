@@ -37,7 +37,7 @@ Creating convincing honeyfiles manually is tedious and repetitive. Foxglove uses
 
 
 ## Tech Stack
-- **LLM Provider:** `anthropic` (Claude Sonnet 4)
+- **LLM Provider:** `anthropic` (Claude — Haiku/Sonnet/Opus; default Haiku 4.5)
 - **Data Validation:** `pydantic` (structured output enforcement during planning)
 - **Office Formats:** `python-docx`, `openpyxl`, `python-pptx`
 - **PDF Handling:** `reportlab` (generation), `pypdf` (encryption)
@@ -88,7 +88,7 @@ This generates a structured directory at `/tmp/op_alpha` containing subfolders a
 | `--teams`        | Yes      | Comma-separated team names for context                                                      | —                          |
 | `--company`      | Yes      | Company description for context (max 256 chars)                                             | —                          |
 | `--file-content` | Yes      | Description of expected content (max 1024 chars)                                            | —                          |
-| `--model`        | No       | Anthropic model identifier                                                                  | `claude-sonnet-4-20250514` |
+| `--model`        | No       | Anthropic model identifier                                                                  | `claude-haiku-4-5` |
 | `--passwords`    | No       | Comma-separated passwords for encrypted PDFs                                                | `abc123,root`              |
 | `--resume`       | No       | Resume a previously interrupted operation                                                   | `false`                    |
 | `--dry-run`      | No       | Show plan without writing honeyfiles                                                        | `false`                    |

@@ -14,7 +14,7 @@ def _make_manifest() -> Manifest:
             teams=["it"],
             company="Acme",
             file_content="docs",
-            model="claude-sonnet-4-20250514",
+            model="claude-haiku-4-5",
             passwords=["abc123"],
         ),
         files=[
@@ -60,7 +60,7 @@ def test_manifest_round_trips_honeytokens(tmp_path: Path):
             teams=["it"],
             company="Acme",
             file_content="docs",
-            model="claude-sonnet-4-20250514",
+            model="claude-haiku-4-5",
             passwords=["abc"],
             honeytokens=["https://a.canary.tools/x", "host.b.com"],
         ),
@@ -87,7 +87,7 @@ def test_manifest_round_trips_authors(tmp_path: Path):
         parameters=OperationParameters(
             base_dir="/tmp", num_files=1, formats=["md"], teams=["it"],
             company="Acme", file_content="docs",
-            model="claude-sonnet-4-20250514", passwords=["a"],
+            model="claude-haiku-4-5", passwords=["a"],
         ),
         files=[FileEntry(path="a.md", format="md", summary="d")],
         authors=["Alice Dupont", "Bob Schmidt"],

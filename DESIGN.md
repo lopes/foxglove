@@ -35,7 +35,7 @@ uv run python -m foxglove generate \
   --teams it,infra,financial \
   --company "mid-sized fintech in Luxembourg..." \
   --file-content "files present information in IT infra..." \
-  [--model claude-sonnet-4-20250514] \
+  [--model claude-haiku-4-5] \
   [--passwords foobar,Checkbox1] \
   [--honeytokens https://x.canary.tools/x.gif,host.y.canarytokens.com] \
   [--resume] \
@@ -53,7 +53,7 @@ uv run python -m foxglove generate \
 | `--teams`        | Yes      | Comma-separated; each team name max 64 chars                | —                           |
 | `--company`      | Yes      | Non-empty string, max 256 chars                             | —                           |
 | `--file-content` | Yes      | Non-empty string, max 1024 chars                            | —                           |
-| `--model`        | No       | Valid Anthropic model identifier                            | `claude-sonnet-4-20250514`  |
+| `--model`        | No       | Valid Anthropic model identifier                            | `claude-haiku-4-5`  |
 | `--passwords`    | No       | Comma-separated list of passwords for EPDF files            | `["abc123", "root"]`        |
 | `--honeytokens`  | No       | Comma-separated callbacks (≤20 entries, each ≤256 chars, no whitespace, no empty entries) | —             |
 | `--resume`       | No       | Flag; enables automatic resume without prompt               | `false`                     |
@@ -147,7 +147,7 @@ Written to `<base-dir>/<operation>/MANIFEST.json`. Always generated on every `ge
     "teams": ["it", "infra", "financial"],
     "company": "mid-sized fintech in Luxembourg...",
     "file_content": "files present information in IT infra...",
-    "model": "claude-sonnet-4-20250514",
+    "model": "claude-haiku-4-5",
     "passwords": ["abc123", "root"],
     "honeytokens": ["https://abc.canary.tools/x.gif"]
   },

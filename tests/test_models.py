@@ -38,7 +38,7 @@ def test_batch_size_is_50():
 
 
 def test_default_model():
-    assert DEFAULT_MODEL == "claude-sonnet-4-20250514"
+    assert DEFAULT_MODEL == "claude-haiku-4-5"
 
 
 def test_default_passwords():
@@ -114,7 +114,7 @@ def _make_operation_parameters(**overrides: str | int | list[str]) -> OperationP
         "teams": ["it", "infra"],
         "company": "Acme Corp",
         "file_content": "IT documentation",
-        "model": "claude-sonnet-4-20250514",
+        "model": "claude-haiku-4-5",
         "passwords": ["abc123", "root"],
     }
     return OperationParameters(**dict(defaults | overrides))  # type: ignore[arg-type]
@@ -128,7 +128,7 @@ def test_operation_parameters_construction():
     assert params.teams == ["it", "infra"]
     assert params.company == "Acme Corp"
     assert params.file_content == "IT documentation"
-    assert params.model == "claude-sonnet-4-20250514"
+    assert params.model == "claude-haiku-4-5"
     assert params.passwords == ["abc123", "root"]
 
 

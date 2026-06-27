@@ -116,7 +116,7 @@ If generation is interrupted, resume where you left off by appending `--resume` 
 
 Mints, lists, and removes honeytokens on a Thinkst Canary console. Foxglove tags each honeytoken's memo with `#foxglove` so you can later list and remove only the ones it created.
 
-Required env var: `FOXGLOVE_THINKST_API_KEY` (your Canary API auth token).
+Required env var: `THINKST_API_KEY` (your Canary API auth token).
 
 `--console` is the URL prefix of your console: in `https://acme.canary.tools/api/v1/...`, the console is `acme`.
 

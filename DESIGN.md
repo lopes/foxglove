@@ -71,7 +71,7 @@ foxglove thinkst remove --console <c> <canarytoken-id>
 
 `--console` is the URL prefix in `https://<console>.canary.tools/api/v1/...` and must match `^[a-z0-9-]+$`.
 
-Auth: env var `FOXGLOVE_THINKST_API_KEY` sent as `X-Canary-Auth-Token` HTTP header.
+Auth: env var `THINKST_API_KEY` sent as `X-Canary-Auth-Token` HTTP header.
 
 Supported `--kind` values (v1, no-extra-params kinds only): `dns`, `http`, `aws-id`, `slack-api`, `qr-code`, `windows-dir`, `wireguard`, `credit-card`, `mysql-dump`, `svn`, `sql`. Kinds requiring file uploads or extra params (`doc-msword`, `cloned-web`, `signed-exe`, …) are rejected with a helpful message.
 
@@ -91,7 +91,7 @@ Supported `--kind` values (v1, no-extra-params kinds only): `dns`, `http`, `aws-
 - If any parameter is invalid, the program exits immediately with an error message and a non-zero exit code.
 - If `--formats` contains an unsupported format, the entire run fails (not a partial skip).
 - For `generate`, `ANTHROPIC_API_KEY` environment variable must be set; fail immediately at startup if missing.
-- For `thinkst`, `FOXGLOVE_THINKST_API_KEY` environment variable must be set; fail immediately if missing.
+- For `thinkst`, `THINKST_API_KEY` environment variable must be set; fail immediately if missing.
 
 
 ## Constants
@@ -228,7 +228,7 @@ Deduplication is applied during plan post-processing, before any files are writt
 ### HTTP Layer
 
 - `httpx.Client(base_url=f"https://{console}.canary.tools", timeout=30)`.
-- Auth header `X-Canary-Auth-Token: <FOXGLOVE_THINKST_API_KEY>`.
+- Auth header `X-Canary-Auth-Token: <THINKST_API_KEY>`.
 - `truststore.inject_into_ssl()` already covers HTTPS verification with the OS cert store.
 
 ### Endpoint Mapping

@@ -31,7 +31,7 @@ def _make_create_result(**overrides: object) -> CreateTokenResult:
 
 
 def test_create_missing_auth_token_returns_env_error(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("FOXGLOVE_THINKST_API_KEY", raising=False)
+    monkeypatch.delenv("THINKST_API_KEY", raising=False)
     result = run(CREATE_ARGV)
     assert result == EXIT_ENV_ERROR
 
@@ -39,7 +39,7 @@ def test_create_missing_auth_token_returns_env_error(monkeypatch: pytest.MonkeyP
 def test_create_happy_path_returns_success(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     mock_client = MagicMock()
     mock_client.create_token.return_value = _make_create_result()
 
@@ -53,7 +53,7 @@ def test_create_happy_path_returns_success(
 
 
 def test_create_prefixes_memo_with_foxglove_tag(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     mock_client = MagicMock()
     mock_client.create_token.return_value = _make_create_result()
 
@@ -67,7 +67,7 @@ def test_create_prefixes_memo_with_foxglove_tag(monkeypatch: pytest.MonkeyPatch)
 
 
 def test_create_passes_console_and_token_to_client(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "my-secret")
+    monkeypatch.setenv("THINKST_API_KEY", "my-secret")
     mock_client = MagicMock()
     mock_client.create_token.return_value = _make_create_result()
     factory = MagicMock(return_value=mock_client)
@@ -81,7 +81,7 @@ def test_create_passes_console_and_token_to_client(monkeypatch: pytest.MonkeyPat
 def test_create_prints_url_when_present(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     mock_client = MagicMock()
     mock_client.create_token.return_value = _make_create_result(
         kind="http",
@@ -97,7 +97,7 @@ def test_create_prints_url_when_present(
 
 
 def test_create_api_error_returns_thinkst_error(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     mock_client = MagicMock()
     mock_client.create_token.side_effect = ThinkstApiError("Unauthorized")
 
@@ -122,7 +122,7 @@ def _summary(**overrides: object) -> TokenSummary:
 
 
 def test_list_missing_auth_token_returns_env_error(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("FOXGLOVE_THINKST_API_KEY", raising=False)
+    monkeypatch.delenv("THINKST_API_KEY", raising=False)
     result = run(LIST_ARGV)
     assert result == EXIT_ENV_ERROR
 
@@ -130,7 +130,7 @@ def test_list_missing_auth_token_returns_env_error(monkeypatch: pytest.MonkeyPat
 def test_list_filters_to_foxglove_tagged_only(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     mock_client = MagicMock()
     mock_client.list_tokens.return_value = [
         _summary(canarytoken="ours", memo=f"{FOXGLOVE_TAG} mine"),
@@ -151,7 +151,7 @@ def test_list_filters_to_foxglove_tagged_only(
 def test_list_empty_result_succeeds(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     mock_client = MagicMock()
     mock_client.list_tokens.return_value = []
 
@@ -162,7 +162,7 @@ def test_list_empty_result_succeeds(
 
 
 def test_list_passes_flock_to_client(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     mock_client = MagicMock()
     mock_client.list_tokens.return_value = []
 
@@ -175,7 +175,7 @@ def test_list_passes_flock_to_client(monkeypatch: pytest.MonkeyPatch):
 def test_list_filters_by_kind_client_side(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     mock_client = MagicMock()
     mock_client.list_tokens.return_value = [
         _summary(canarytoken="d1", kind="dns", memo=f"{FOXGLOVE_TAG} a"),
@@ -194,7 +194,7 @@ def test_list_json_output(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):
     import json
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     mock_client = MagicMock()
     mock_client.list_tokens.return_value = [
         _summary(canarytoken="t-json", memo=f"{FOXGLOVE_TAG} hi"),
@@ -213,7 +213,7 @@ def test_list_json_output(
 
 
 def test_list_api_error_returns_thinkst_error(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     mock_client = MagicMock()
     mock_client.list_tokens.side_effect = ThinkstApiError("server down")
 
@@ -227,7 +227,7 @@ REMOVE_ARGV = ["thinkst", "remove", "--console", "acme", "tok-x"]
 
 
 def test_remove_missing_auth_token_returns_env_error(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.delenv("FOXGLOVE_THINKST_API_KEY", raising=False)
+    monkeypatch.delenv("THINKST_API_KEY", raising=False)
     result = run(REMOVE_ARGV)
     assert result == EXIT_ENV_ERROR
 
@@ -235,7 +235,7 @@ def test_remove_missing_auth_token_returns_env_error(monkeypatch: pytest.MonkeyP
 def test_remove_happy_path(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     mock_client = MagicMock()
     mock_client.delete_token.return_value = None
 
@@ -251,7 +251,7 @@ def test_remove_happy_path(
 def test_remove_incidents_blocked_user_confirms_yes(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     monkeypatch.setattr("builtins.input", lambda _: "y")
     mock_client = MagicMock()
     mock_client.delete_token.side_effect = [
@@ -269,7 +269,7 @@ def test_remove_incidents_blocked_user_confirms_yes(
 
 
 def test_remove_incidents_blocked_user_denies(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     monkeypatch.setattr("builtins.input", lambda _: "n")
     mock_client = MagicMock()
     mock_client.delete_token.side_effect = IncidentsBlockedError("blocked")
@@ -282,7 +282,7 @@ def test_remove_incidents_blocked_user_denies(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_remove_other_api_error_returns_thinkst_error(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setenv("FOXGLOVE_THINKST_API_KEY", "secret")
+    monkeypatch.setenv("THINKST_API_KEY", "secret")
     mock_client = MagicMock()
     mock_client.delete_token.side_effect = ThinkstApiError("unknown id")
 

@@ -16,6 +16,7 @@ EXIT_ENV_ERROR: int = 2
 EXIT_API_ERROR: int = 3
 EXIT_PARTIAL: int = 4
 EXIT_PLANNING_ERROR: int = 5
+EXIT_THINKST_ERROR: int = 6
 
 
 class FileEntry(BaseModel):

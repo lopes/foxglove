@@ -8,7 +8,6 @@ from foxglove.metadata import FileMetadata
 
 
 def write_pptx(content: str, path: Path, *, metadata: FileMetadata | None = None) -> None:
-    del metadata
     path.parent.mkdir(parents=True, exist_ok=True)
     prs = Presentation()
     slides_content = content.split("---")
@@ -29,4 +28,10 @@ def write_pptx(content: str, path: Path, *, metadata: FileMetadata | None = None
                 tf.text = line
             else:
                 tf.add_paragraph().text = line
+    if metadata is not None:
+        props = prs.core_properties
+        props.author = metadata.author
+        props.last_modified_by = metadata.author
+        props.created = metadata.created_at
+        props.modified = metadata.modified_at
     prs.save(str(path))

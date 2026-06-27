@@ -129,3 +129,80 @@ def test_get_writer_epdf_returns_callable():
 def test_get_writer_unknown_format_raises():
     with pytest.raises(ValueError):
         get_writer("exe")
+
+
+from datetime import UTC, datetime
+
+from foxglove.metadata import FileMetadata
+
+FIXED_MODIFIED = datetime(2026, 6, 27, 15, 30, 0, tzinfo=UTC)
+FIXED_CREATED = datetime(2026, 6, 10, 9, 0, 0, tzinfo=UTC)
+
+
+def _meta(author: str = "Alice Dupont") -> FileMetadata:
+    return FileMetadata(
+        author=author, created_at=FIXED_CREATED, modified_at=FIXED_MODIFIED,
+    )
+
+
+def _to_naive_utc(dt: datetime) -> datetime:
+    if dt.tzinfo is not None:
+        return dt.astimezone(UTC).replace(tzinfo=None)
+    return dt
+
+
+def _ts_close(a: datetime, b: datetime, tol_seconds: float = 2.0) -> bool:
+    return abs((_to_naive_utc(a) - _to_naive_utc(b)).total_seconds()) < tol_seconds
+
+
+def test_docx_writer_sets_author_and_timestamps(tmp_path: Path):
+    from docx import Document
+    target = tmp_path / "doc.docx"
+    write_docx("# Hello", target, metadata=_meta("Alice Dupont"))
+    doc = Document(str(target))
+    props = doc.core_properties
+    assert props.author == "Alice Dupont"
+    assert props.last_modified_by == "Alice Dupont"
+    assert _ts_close(props.created, FIXED_CREATED)
+    assert _ts_close(props.modified, FIXED_MODIFIED)
+
+
+def test_docx_writer_without_metadata_uses_library_defaults(tmp_path: Path):
+    from docx import Document
+    target = tmp_path / "doc.docx"
+    write_docx("# Hello", target)
+    doc = Document(str(target))
+    assert doc.core_properties.author != "Alice Dupont"
+
+
+def test_xlsx_writer_sets_creator_and_timestamps(tmp_path: Path):
+    from openpyxl import load_workbook
+    target = tmp_path / "sheet.xlsx"
+    write_xlsx("Name,Age\nAlice,30", target, metadata=_meta("Bob Schmidt"))
+    wb = load_workbook(target)
+    assert wb.properties.creator == "Bob Schmidt"
+    assert wb.properties.lastModifiedBy == "Bob Schmidt"
+    assert wb.properties.created is not None
+    assert wb.properties.modified is not None
+    assert _ts_close(wb.properties.created, FIXED_CREATED)
+    assert _ts_close(wb.properties.modified, FIXED_MODIFIED)
+
+
+def test_pptx_writer_sets_author_and_timestamps(tmp_path: Path):
+    from pptx import Presentation
+    target = tmp_path / "deck.pptx"
+    write_pptx("Title\nLine A", target, metadata=_meta("Carla Müller"))
+    prs = Presentation(str(target))
+    props = prs.core_properties
+    assert props.author == "Carla Müller"
+    assert props.last_modified_by == "Carla Müller"
+    assert _ts_close(props.created, FIXED_CREATED)
+    assert _ts_close(props.modified, FIXED_MODIFIED)
+
+
+def test_docx_writer_empty_author_still_sets_timestamps(tmp_path: Path):
+    from docx import Document
+    target = tmp_path / "doc.docx"
+    write_docx("# Hi", target, metadata=_meta(author=""))
+    doc = Document(str(target))
+    assert _ts_close(doc.core_properties.modified, FIXED_MODIFIED)

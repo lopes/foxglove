@@ -5,7 +5,7 @@ import pytest
 from foxglove.__main__ import run
 from foxglove.models import EXIT_ENV_ERROR, EXIT_SUCCESS, EXIT_THINKST_ERROR
 from foxglove.thinkst import FOXGLOVE_TAG
-from foxglove.thinkst.client import ThinkstApiError
+from foxglove.thinkst.client import IncidentsBlockedError, ThinkstApiError
 from foxglove.thinkst.models import CreateTokenResult, TokenSummary
 
 
@@ -219,5 +219,74 @@ def test_list_api_error_returns_thinkst_error(monkeypatch: pytest.MonkeyPatch):
 
     with patch("foxglove.thinkst.runner.ThinkstClient", return_value=mock_client):
         result = run(LIST_ARGV)
+
+    assert result == EXIT_THINKST_ERROR
+
+
+REMOVE_ARGV = ["thinkst", "remove", "--console", "acme", "tok-x"]
+
+
+def test_remove_missing_auth_token_returns_env_error(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("THINKST_AUTH_TOKEN", raising=False)
+    result = run(REMOVE_ARGV)
+    assert result == EXIT_ENV_ERROR
+
+
+def test_remove_happy_path(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    monkeypatch.setenv("THINKST_AUTH_TOKEN", "secret")
+    mock_client = MagicMock()
+    mock_client.delete_token.return_value = None
+
+    with patch("foxglove.thinkst.runner.ThinkstClient", return_value=mock_client):
+        result = run(REMOVE_ARGV)
+
+    assert result == EXIT_SUCCESS
+    mock_client.delete_token.assert_called_once_with(canarytoken="tok-x")
+    captured = capsys.readouterr()
+    assert "tok-x" in captured.out
+
+
+def test_remove_incidents_blocked_user_confirms_yes(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    monkeypatch.setenv("THINKST_AUTH_TOKEN", "secret")
+    monkeypatch.setattr("builtins.input", lambda _: "y")
+    mock_client = MagicMock()
+    mock_client.delete_token.side_effect = [
+        IncidentsBlockedError("token has unacknowledged incidents"),
+        None,
+    ]
+
+    with patch("foxglove.thinkst.runner.ThinkstClient", return_value=mock_client):
+        result = run(REMOVE_ARGV)
+
+    assert result == EXIT_SUCCESS
+    assert mock_client.delete_token.call_count == 2
+    second_call = mock_client.delete_token.call_args_list[1].kwargs
+    assert second_call == {"canarytoken": "tok-x", "clear_incidents": True}
+
+
+def test_remove_incidents_blocked_user_denies(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("THINKST_AUTH_TOKEN", "secret")
+    monkeypatch.setattr("builtins.input", lambda _: "n")
+    mock_client = MagicMock()
+    mock_client.delete_token.side_effect = IncidentsBlockedError("blocked")
+
+    with patch("foxglove.thinkst.runner.ThinkstClient", return_value=mock_client):
+        result = run(REMOVE_ARGV)
+
+    assert result == EXIT_THINKST_ERROR
+    assert mock_client.delete_token.call_count == 1
+
+
+def test_remove_other_api_error_returns_thinkst_error(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("THINKST_AUTH_TOKEN", "secret")
+    mock_client = MagicMock()
+    mock_client.delete_token.side_effect = ThinkstApiError("unknown id")
+
+    with patch("foxglove.thinkst.runner.ThinkstClient", return_value=mock_client):
+        result = run(REMOVE_ARGV)
 
     assert result == EXIT_THINKST_ERROR

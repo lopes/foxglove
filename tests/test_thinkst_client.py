@@ -3,7 +3,7 @@ from collections.abc import Callable
 import httpx
 import pytest
 
-from foxglove.thinkst.client import ThinkstApiError, ThinkstClient
+from foxglove.thinkst.client import IncidentsBlockedError, ThinkstApiError, ThinkstClient
 from foxglove.thinkst.models import CreateTokenResult, TokenSummary
 
 
@@ -239,3 +239,61 @@ def test_list_tokens_raises_on_error_result():
     client = _client_with_handler(handler)
     with pytest.raises(ThinkstApiError):
         client.list_tokens()
+
+
+def test_delete_token_posts_to_correct_url():
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(200, json={"result": "success"})
+
+    client = _client_with_handler(handler)
+    client.delete_token(canarytoken="tok-1")
+
+    assert len(captured) == 1
+    req = captured[0]
+    assert req.method == "POST"
+    assert req.url.path == "/api/v1/canarytoken/delete"
+    body = req.content.decode()
+    assert "canarytoken=tok-1" in body
+    assert "clear_incidents" not in body
+
+
+def test_delete_token_with_clear_incidents():
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(200, json={"result": "success"})
+
+    client = _client_with_handler(handler)
+    client.delete_token(canarytoken="tok-1", clear_incidents=True)
+
+    body = captured[0].content.decode()
+    assert "clear_incidents=true" in body or "clear_incidents=True" in body
+
+
+def test_delete_token_raises_incidents_blocked():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "result": "error",
+                "message": "Cannot delete: token has unacknowledged incidents",
+            },
+        )
+
+    client = _client_with_handler(handler)
+    with pytest.raises(IncidentsBlockedError):
+        client.delete_token(canarytoken="tok-1")
+
+
+def test_delete_token_raises_other_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"result": "error", "message": "unknown id"})
+
+    client = _client_with_handler(handler)
+    with pytest.raises(ThinkstApiError) as exc:
+        client.delete_token(canarytoken="bogus")
+    assert not isinstance(exc.value, IncidentsBlockedError)

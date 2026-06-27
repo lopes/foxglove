@@ -12,6 +12,10 @@ class ThinkstApiError(Exception):
     pass
 
 
+class IncidentsBlockedError(ThinkstApiError):
+    pass
+
+
 class ThinkstClient:
     def __init__(
         self,
@@ -79,6 +83,21 @@ class ThinkstClient:
             cursor = next_cursor
 
         return results
+
+    def delete_token(self, *, canarytoken: str, clear_incidents: bool = False) -> None:
+        data: dict[str, str] = {"canarytoken": canarytoken}
+        if clear_incidents:
+            data["clear_incidents"] = "true"
+        response = self._client.post(
+            "/api/v1/canarytoken/delete",
+            data=data,
+        )
+        try:
+            self._parse_payload(response)
+        except ThinkstApiError as e:
+            if "incident" in str(e).lower():
+                raise IncidentsBlockedError(str(e)) from e
+            raise
 
     def close(self) -> None:
         self._client.close()

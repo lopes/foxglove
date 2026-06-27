@@ -24,7 +24,7 @@ from foxglove.models import (
 )
 from foxglove.planner import PlanningError, plan_campaign
 from foxglove.resume import ResumeAction, determine_resume_action
-from foxglove.thinkst.cli import ThinkstCreateArgs, ThinkstListArgs
+from foxglove.thinkst.cli import ThinkstCreateArgs, ThinkstListArgs, ThinkstRemoveArgs
 from foxglove.thinkst.runner import run_thinkst
 
 
@@ -63,7 +63,7 @@ def run(argv: list[str]) -> int:
     if isinstance(result, CliError):
         print(f"Error: {result.message}", file=sys.stderr)
         return EXIT_CLI_ERROR
-    if isinstance(result, (ThinkstCreateArgs, ThinkstListArgs)):
+    if isinstance(result, (ThinkstCreateArgs, ThinkstListArgs, ThinkstRemoveArgs)):
         return run_thinkst(result)
 
     cli: CliArgs = result

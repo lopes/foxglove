@@ -2,7 +2,7 @@ import pytest
 
 from foxglove.cli import CliError, parse_args
 from foxglove.thinkst import SUPPORTED_KINDS
-from foxglove.thinkst.cli import ThinkstCreateArgs, ThinkstListArgs
+from foxglove.thinkst.cli import ThinkstCreateArgs, ThinkstListArgs, ThinkstRemoveArgs
 
 
 def _create_argv(**overrides: str) -> list[str]:
@@ -151,3 +151,26 @@ def test_list_invalid_console_returns_error():
     result = parse_args(["thinkst", "list", "--console", "Acme.Corp"])
     assert isinstance(result, CliError)
     assert "console" in result.message.lower()
+
+
+def test_remove_happy_path():
+    result = parse_args(["thinkst", "remove", "--console", "acme", "tok-abc"])
+    assert isinstance(result, ThinkstRemoveArgs)
+    assert result.console == "acme"
+    assert result.canarytoken == "tok-abc"
+
+
+def test_remove_missing_id_returns_error():
+    result = parse_args(["thinkst", "remove", "--console", "acme"])
+    assert isinstance(result, CliError)
+
+
+def test_remove_missing_console_returns_error():
+    result = parse_args(["thinkst", "remove", "tok-abc"])
+    assert isinstance(result, CliError)
+    assert "console" in result.message.lower()
+
+
+def test_remove_empty_id_returns_error():
+    result = parse_args(["thinkst", "remove", "--console", "acme", ""])
+    assert isinstance(result, CliError)

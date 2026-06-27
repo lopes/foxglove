@@ -8,7 +8,7 @@ from foxglove.thinkst import SUPPORTED_KINDS
 CONSOLE_PATTERN: re.Pattern[str] = re.compile(r"^[a-z0-9-]+$")
 MAX_CONSOLE_LEN: int = 64
 MAX_MEMO_LEN: int = 256
-THINKST_ACTIONS: frozenset[str] = frozenset({"create", "list"})
+THINKST_ACTIONS: frozenset[str] = frozenset({"create", "list", "remove"})
 
 
 @dataclass(frozen=True)
@@ -25,6 +25,12 @@ class ThinkstListArgs:
     flock_id: str | None
     kind: str | None
     json_output: bool
+
+
+@dataclass(frozen=True)
+class ThinkstRemoveArgs:
+    console: str
+    canarytoken: str
 
 
 def _validate_console(value: str) -> str | None:
@@ -83,7 +89,23 @@ def _validate_list(args: argparse.Namespace) -> ThinkstListArgs | CliError:
     )
 
 
-def parse_thinkst_args(argv: list[str]) -> "ThinkstCreateArgs | ThinkstListArgs | CliError":
+def _validate_remove(args: argparse.Namespace) -> ThinkstRemoveArgs | CliError:
+    console_error = _validate_console(args.console)
+    if console_error is not None:
+        return CliError(message=console_error)
+
+    if not args.canarytoken:
+        return CliError(message="canarytoken id must not be empty")
+
+    return ThinkstRemoveArgs(
+        console=args.console,
+        canarytoken=args.canarytoken,
+    )
+
+
+def parse_thinkst_args(
+    argv: list[str],
+) -> "ThinkstCreateArgs | ThinkstListArgs | ThinkstRemoveArgs | CliError":
     if len(argv) < 2:
         return CliError(
             message=f"thinkst requires an action; one of: {', '.join(sorted(THINKST_ACTIONS))}"
@@ -108,6 +130,10 @@ def parse_thinkst_args(argv: list[str]) -> "ThinkstCreateArgs | ThinkstListArgs 
     list_p.add_argument("--kind", default=None)
     list_p.add_argument("--json", action="store_true", default=False)
 
+    remove = sub.add_parser("remove", exit_on_error=False)
+    remove.add_argument("--console", required=True)
+    remove.add_argument("canarytoken")
+
     try:
         args = parser.parse_args(argv[1:])
     except argparse.ArgumentError as e:
@@ -117,4 +143,6 @@ def parse_thinkst_args(argv: list[str]) -> "ThinkstCreateArgs | ThinkstListArgs 
         return _validate_create(args)
     if args.action == "list":
         return _validate_list(args)
+    if args.action == "remove":
+        return _validate_remove(args)
     return CliError(message=f"'{args.action}' is not yet implemented")

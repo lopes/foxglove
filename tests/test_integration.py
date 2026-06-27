@@ -48,6 +48,7 @@ CONTENT_RESPONSES = [
 
 def _base_argv(tmp_path: Path) -> list[str]:
     return [
+        "generate",
         "--base-dir", str(tmp_path),
         "--operation", "op_integration",
         "--num-files", "5",

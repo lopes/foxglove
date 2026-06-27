@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from foxglove.models import DEFAULT_MODEL, DEFAULT_PASSWORDS, MAX_FILES, SUPPORTED_FORMATS
 
 OPERATION_PATTERN: re.Pattern[str] = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,254}$")
+SUBCOMMANDS: frozenset[str] = frozenset({"generate", "thinkst"})
 
 
 @dataclass(frozen=True)
@@ -28,8 +29,7 @@ class CliError:
     message: str
 
 
-def parse_args(argv: list[str]) -> CliArgs | CliError:
-    parser = argparse.ArgumentParser(prog="foxglove", exit_on_error=False)
+def _add_generate_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--base-dir", required=True)
     parser.add_argument("--operation", required=True)
     parser.add_argument("--num-files", required=True, type=int)
@@ -42,11 +42,8 @@ def parse_args(argv: list[str]) -> CliArgs | CliError:
     parser.add_argument("--resume", action="store_true", default=False)
     parser.add_argument("--dry-run", action="store_true", default=False)
 
-    try:
-        args = parser.parse_args(argv)
-    except argparse.ArgumentError as e:
-        return CliError(message=str(e))
 
+def _validate_generate(args: argparse.Namespace) -> CliArgs | CliError:
     if not os.path.isdir(args.base_dir):
         return CliError(message=f"base-dir is not an existing directory: '{args.base_dir}'")
 
@@ -97,3 +94,36 @@ def parse_args(argv: list[str]) -> CliArgs | CliError:
         resume=args.resume,
         dry_run=args.dry_run,
     )
+
+
+def parse_args(argv: list[str]) -> CliArgs | CliError:
+    if not argv:
+        return CliError(
+            message="no subcommand given; use 'foxglove generate ...' or 'foxglove thinkst ...'"
+        )
+    if argv[0] not in SUBCOMMANDS:
+        if argv[0].startswith("--"):
+            return CliError(
+                message=(
+                    "the flat invocation 'foxglove --base-dir ...' is no longer supported; "
+                    "use 'foxglove generate --base-dir ...' instead"
+                )
+            )
+        return CliError(message=f"unknown command '{argv[0]}'; use 'generate' or 'thinkst'")
+
+    parser = argparse.ArgumentParser(prog="foxglove", exit_on_error=False)
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    gen = sub.add_parser("generate", exit_on_error=False)
+    _add_generate_arguments(gen)
+
+    sub.add_parser("thinkst", exit_on_error=False)
+
+    try:
+        args = parser.parse_args(argv)
+    except argparse.ArgumentError as e:
+        return CliError(message=str(e))
+
+    if args.command == "generate":
+        return _validate_generate(args)
+    return CliError(message=f"'{args.command}' subcommand is not yet implemented")

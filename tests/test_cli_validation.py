@@ -15,7 +15,7 @@ def _valid_argv(**overrides: str) -> list[str]:
         "--file-content": "IT documentation files",
     }
     merged = defaults | overrides
-    return [item for pair in merged.items() for item in pair]
+    return ["generate"] + [item for pair in merged.items() for item in pair]
 
 
 def test_happy_path_parses_all_required_args():

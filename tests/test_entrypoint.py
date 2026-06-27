@@ -27,6 +27,7 @@ def test_missing_api_key_returns_exit_code_2(
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     result = run(
         [
+            "generate",
             "--base-dir",
             str(tmp_path),
             "--operation",
@@ -48,6 +49,7 @@ def test_missing_api_key_returns_exit_code_2(
 
 def _valid_argv(tmp_path: Path) -> list[str]:
     return [
+        "generate",
         "--base-dir",
         str(tmp_path),
         "--operation",

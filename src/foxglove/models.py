@@ -38,6 +38,7 @@ class CampaignPlan(BaseModel):
     model_config = {"frozen": True}
 
     files: list[FileEntry]
+    authors: list[str] = []
 
 
 class OperationParameters(BaseModel):
@@ -60,3 +61,4 @@ class Manifest(BaseModel):
     operation: str
     parameters: OperationParameters
     files: list[FileEntry]
+    authors: list[str] = []

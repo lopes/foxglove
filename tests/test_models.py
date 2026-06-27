@@ -93,6 +93,19 @@ def test_campaign_plan_accepts_empty_files():
     assert plan.files == []
 
 
+def test_campaign_plan_default_authors_is_empty():
+    plan = CampaignPlan(files=[])
+    assert plan.authors == []
+
+
+def test_campaign_plan_with_authors():
+    plan = CampaignPlan(
+        files=[],
+        authors=["Alice Dupont", "Bob Schmidt", "Carla Müller"],
+    )
+    assert plan.authors == ["Alice Dupont", "Bob Schmidt", "Carla Müller"]
+
+
 def _make_operation_parameters(**overrides: str | int | list[str]) -> OperationParameters:
     defaults: dict[str, str | int | list[str]] = {
         "base_dir": "/tmp",
@@ -125,8 +138,10 @@ def test_operation_parameters_is_frozen():
         params.base_dir = "/other"
 
 
-def _make_manifest(**overrides: str | OperationParameters | list[FileEntry]) -> Manifest:
-    defaults: dict[str, str | OperationParameters | list[FileEntry]] = {
+def _make_manifest(
+    **overrides: str | OperationParameters | list[FileEntry] | list[str],
+) -> Manifest:
+    defaults: dict[str, str | OperationParameters | list[FileEntry] | list[str]] = {
         "operation": "op_alpha",
         "parameters": _make_operation_parameters(),
         "files": [
@@ -155,3 +170,13 @@ def test_manifest_json_round_trip():
     json_str = original.model_dump_json()
     restored = Manifest.model_validate_json(json_str)
     assert restored == original
+
+
+def test_manifest_default_authors_is_empty():
+    manifest = _make_manifest()
+    assert manifest.authors == []
+
+
+def test_manifest_with_authors():
+    manifest = _make_manifest(authors=["Alice", "Bob"])
+    assert manifest.authors == ["Alice", "Bob"]

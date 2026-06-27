@@ -79,3 +79,28 @@ def test_manifest_default_honeytokens_is_empty_list(tmp_path: Path):
     restored = read_manifest(tmp_path)
     assert restored is not None
     assert restored.parameters.honeytokens == []
+
+
+def test_manifest_round_trips_authors(tmp_path: Path):
+    original = Manifest(
+        operation="op_authors",
+        parameters=OperationParameters(
+            base_dir="/tmp", num_files=1, formats=["md"], teams=["it"],
+            company="Acme", file_content="docs",
+            model="claude-sonnet-4-20250514", passwords=["a"],
+        ),
+        files=[FileEntry(path="a.md", format="md", summary="d")],
+        authors=["Alice Dupont", "Bob Schmidt"],
+    )
+    write_manifest(original, tmp_path)
+    restored = read_manifest(tmp_path)
+    assert restored is not None
+    assert restored.authors == ["Alice Dupont", "Bob Schmidt"]
+
+
+def test_manifest_default_authors_is_empty_list_on_disk(tmp_path: Path):
+    manifest = _make_manifest()
+    write_manifest(manifest, tmp_path)
+    restored = read_manifest(tmp_path)
+    assert restored is not None
+    assert restored.authors == []

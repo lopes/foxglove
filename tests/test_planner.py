@@ -9,6 +9,7 @@ from foxglove.planner import (
     PlanningError,
     build_planning_prompt,
     compute_batches,
+    merge_plans,
     plan_batch,
     plan_campaign,
 )
@@ -48,18 +49,35 @@ def test_build_planning_prompt_contains_context():
     assert "50" in prompt
 
 
-def _make_tool_use_block(files: list[dict[str, str]]) -> ToolUseBlock:
+def test_build_planning_prompt_requests_authors():
+    prompt = build_planning_prompt(
+        batch_num=1, batch_size=10,
+        formats=["pdf"], teams=["it"],
+        company="Luxembourg fintech",
+        file_content="docs",
+    )
+    assert "author" in prompt.lower() or "name" in prompt.lower()
+
+
+def _make_tool_use_block(
+    files: list[dict[str, str]], authors: list[str] | None = None,
+) -> ToolUseBlock:
+    payload: dict[str, object] = {"files": files}
+    if authors is not None:
+        payload["authors"] = authors
     return ToolUseBlock(
         id="toolu_test",
         type="tool_use",
         name="campaign_plan",
-        input={"files": files},
+        input=payload,
     )
 
 
-def _make_api_response(files: list[dict[str, str]]) -> MagicMock:
+def _make_api_response(
+    files: list[dict[str, str]], authors: list[str] | None = None,
+) -> MagicMock:
     response = MagicMock()
-    response.content = [_make_tool_use_block(files)]
+    response.content = [_make_tool_use_block(files, authors)]
     response.stop_reason = "tool_use"
     return response
 
@@ -132,3 +150,38 @@ def test_plan_campaign_merges_batches():
     assert isinstance(result, CampaignPlan)
     assert len(result.files) == 75
     assert client.messages.create.call_count == 2
+
+
+def test_plan_batch_parses_authors():
+    files = [{"path": "a.pdf", "format": "pdf", "summary": "A"}]
+    client = MagicMock()
+    client.messages.create.return_value = _make_api_response(
+        files, authors=["Alice", "Bob", "Carla"],
+    )
+    result = plan_batch(client, "Generate", 1, "test-model")
+    assert result.authors == ["Alice", "Bob", "Carla"]
+
+
+def test_merge_plans_unions_and_dedupes_authors():
+    plan_a = CampaignPlan(files=[], authors=["Alice", "Bob"])
+    plan_b = CampaignPlan(files=[], authors=["Bob", "Carla"])
+    merged = merge_plans([plan_a, plan_b])
+    assert sorted(merged.authors) == ["Alice", "Bob", "Carla"]
+
+
+def test_merge_plans_caps_authors_at_ten():
+    plan = CampaignPlan(files=[], authors=[f"Person {i}" for i in range(25)])
+    merged = merge_plans([plan])
+    assert len(merged.authors) <= 10
+
+
+def test_plan_campaign_propagates_authors():
+    files = [{"path": f"f{i}.md", "format": "md", "summary": f"F{i}"} for i in range(5)]
+    client = MagicMock()
+    client.messages.create.return_value = _make_api_response(
+        files, authors=["Alice", "Bob"],
+    )
+    params = _make_params(num_files=5)
+    result = plan_campaign(client, params)
+    assert "Alice" in result.authors
+    assert "Bob" in result.authors

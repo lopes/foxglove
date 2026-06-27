@@ -114,6 +114,7 @@ def run(argv: list[str]) -> int:
             operation=cli.operation,
             parameters=params,
             files=plan.files,
+            authors=plan.authors,
         )
 
     if cli.dry_run:

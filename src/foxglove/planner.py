@@ -7,6 +7,8 @@ from pydantic import ValidationError
 
 from foxglove.models import BATCH_SIZE, CampaignPlan, FileEntry, OperationParameters
 
+MAX_AUTHORS: int = 10
+
 
 class PlanningError(Exception):
     def __init__(self, message: str, *, is_api_error: bool = False) -> None:
@@ -50,9 +52,12 @@ def assign_epdf_passwords(entries: list[FileEntry], passwords: list[str]) -> lis
 
 def merge_plans(plans: list[CampaignPlan]) -> CampaignPlan:
     all_files: list[FileEntry] = []
+    all_authors: list[str] = []
     for plan in plans:
         all_files = [*all_files, *plan.files]
-    return CampaignPlan(files=all_files)
+        all_authors = [*all_authors, *plan.authors]
+    deduped_authors = list(dict.fromkeys(all_authors))[:MAX_AUTHORS]
+    return CampaignPlan(files=all_files, authors=deduped_authors)
 
 
 def normalize_epdf_extensions(entries: list[FileEntry]) -> list[FileEntry]:
@@ -72,7 +77,7 @@ def post_process_plan(plans: list[CampaignPlan], passwords: list[str]) -> Campai
     normalized = normalize_epdf_extensions(merged.files)
     deduped = deduplicate_paths(normalized)
     with_passwords = assign_epdf_passwords(deduped, passwords)
-    return CampaignPlan(files=with_passwords)
+    return CampaignPlan(files=with_passwords, authors=merged.authors)
 
 
 def compute_batches(num_files: int, batch_size: int = BATCH_SIZE) -> list[tuple[int, int]]:
@@ -97,7 +102,10 @@ def build_planning_prompt(
         f"Consider files created by {', '.join(teams)} for the company {company} "
         f"under this context: {file_content}.\n"
         f"Use only these formats: {', '.join(formats)}.\n"
-        f"Each entry needs: path (relative, with team-based subdirectories), format, and summary."
+        f"Each entry needs: path (relative, with team-based subdirectories), format, and summary.\n"
+        f"Also provide an authors pool: 5-10 plausible employee names "
+        f"(full first + last name) coherent with the company's region, industry, "
+        f"and the teams. These names will be assigned as document authors."
     )
 
 

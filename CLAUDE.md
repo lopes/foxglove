@@ -51,7 +51,7 @@ uv run pytest tests/test_example.py
 uv run pytest -k "test_name"
 ```
 
-Requires `ANTHROPIC_API_KEY` for the `generate` subcommand and `THINKST_API_KEY` for the `thinkst` subcommands.
+Requires `ANTHROPIC_API_KEY` for the `generate` subcommand and `THINKST_API_KEY` (Admin role, flock-scoped preferred) for the `thinkst` subcommands.
 
 ## Key Dependencies
 

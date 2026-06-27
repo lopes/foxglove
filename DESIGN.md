@@ -231,6 +231,10 @@ Deduplication is applied during plan post-processing, before any files are writt
 - Auth header `X-Canary-Auth-Token: <THINKST_API_KEY>`.
 - `truststore.inject_into_ssl()` already covers HTTPS verification with the OS cert store.
 
+### Required Canary API key role
+
+Foxglove requires an **Admin** key. Creating and deleting canarytokens are "full API operations" per Thinkst's role matrix — Analyst can only acknowledge/delete *alerts*, not canarytokens themselves, and Read-Only is view-only. Flock-scoped Admin is preferred over console-scoped Admin when foxglove targets a single flock (smaller blast radius). Refs: [How does the API work?](https://help.canary.tools/hc/en-gb/articles/360012727537-How-does-the-API-work), [Flock API Keys](https://help.canary.tools/hc/en-gb/articles/7111549805213-Flock-API-Keys).
+
 ### Endpoint Mapping
 
 | Action | Endpoint                              | Method | Body / query                                    |

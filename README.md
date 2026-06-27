@@ -118,6 +118,16 @@ Mints, lists, and removes honeytokens on a Thinkst Canary console. Foxglove tags
 
 Required env var: `THINKST_API_KEY` (your Canary API auth token).
 
+#### Which Canary API role?
+
+Foxglove needs **Admin**. Both `create` and `remove` are "full API operations" per Thinkst's role matrix; Analyst can only delete *alerts*, not canarytokens themselves, and Read-Only can't write at all.
+
+Recommended: **flock-scoped** Admin key over a console-scoped one. If foxglove only targets a single flock, scope the key to that flock so a leaked key can't touch other flocks' tokens.
+
+If you ever decouple creation from list/remove (e.g. an automation only mints, humans clean up via the Canary UI), look at Thinkst's specialized **Canarytoken Deploy** key type instead — it's narrower than Admin. Doesn't fit foxglove's current flow because foxglove also lists/removes.
+
+See [Thinkst — How does the API work?](https://help.canary.tools/hc/en-gb/articles/360012727537-How-does-the-API-work) and [Flock API Keys](https://help.canary.tools/hc/en-gb/articles/7111549805213-Flock-API-Keys).
+
 `--console` is the URL prefix of your console: in `https://acme.canary.tools/api/v1/...`, the console is `acme`.
 
 ```sh

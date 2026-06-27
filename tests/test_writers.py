@@ -206,3 +206,43 @@ def test_docx_writer_empty_author_still_sets_timestamps(tmp_path: Path):
     write_docx("# Hi", target, metadata=_meta(author=""))
     doc = Document(str(target))
     assert _ts_close(doc.core_properties.modified, FIXED_MODIFIED)
+
+
+def test_pdf_writer_sets_author_and_dates(tmp_path: Path):
+    from pypdf import PdfReader
+    target = tmp_path / "report.pdf"
+    write_pdf("Quarterly report content", target, metadata=_meta("Alice Dupont"))
+    reader = PdfReader(target)
+    md = reader.metadata
+    assert md is not None
+    assert md.author == "Alice Dupont"
+    assert md.creation_date is not None
+    assert md.modification_date is not None
+    assert _ts_close(md.creation_date, FIXED_CREATED)
+    assert _ts_close(md.modification_date, FIXED_MODIFIED)
+
+
+def test_pdf_writer_without_metadata_still_valid(tmp_path: Path):
+    target = tmp_path / "report.pdf"
+    write_pdf("hello", target)
+    assert target.read_bytes()[:4] == b"%PDF"
+
+
+def test_epdf_writer_sets_metadata_under_encryption(tmp_path: Path):
+    from pypdf import PdfReader
+    target = tmp_path / "secret.pdf"
+    write_epdf("Secret content", target, password="abc123", metadata=_meta("Bob Schmidt"))
+    reader = PdfReader(target, password="abc123")
+    md = reader.metadata
+    assert md is not None
+    assert md.author == "Bob Schmidt"
+    assert _ts_close(md.creation_date, FIXED_CREATED)
+    assert _ts_close(md.modification_date, FIXED_MODIFIED)
+
+
+def test_epdf_writer_without_metadata_still_encrypted(tmp_path: Path):
+    from pypdf import PdfReader
+    target = tmp_path / "secret.pdf"
+    write_epdf("Secret content", target, password="pw")
+    reader = PdfReader(target, password="pw")
+    assert len(reader.pages) >= 1

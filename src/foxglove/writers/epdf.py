@@ -8,6 +8,7 @@ from reportlab.platypus import Flowable, Paragraph, SimpleDocTemplate
 from pypdf import PdfReader, PdfWriter
 
 from foxglove.metadata import FileMetadata
+from foxglove.writers._pdf_metadata import to_pdf_metadata
 
 
 def _content_to_flowables(content: str) -> Sequence[Flowable]:
@@ -29,7 +30,6 @@ def write_epdf(
     *,
     metadata: FileMetadata | None = None,
 ) -> None:
-    del metadata
     path.parent.mkdir(parents=True, exist_ok=True)
 
     buffer = BytesIO()
@@ -40,6 +40,8 @@ def write_epdf(
     writer = PdfWriter()
     for page in reader.pages:
         writer.add_page(page)
+    if metadata is not None:
+        writer.add_metadata(to_pdf_metadata(metadata))
     writer.encrypt(password)
 
     with open(path, "wb") as f:

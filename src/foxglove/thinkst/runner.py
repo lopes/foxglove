@@ -8,7 +8,7 @@ from foxglove.thinkst.cli import ThinkstCreateArgs, ThinkstListArgs, ThinkstRemo
 from foxglove.thinkst.client import IncidentsBlockedError, ThinkstApiError, ThinkstClient
 from foxglove.thinkst.models import CreateTokenResult, TokenSummary
 
-AUTH_TOKEN_ENV: str = "THINKST_AUTH_TOKEN"
+AUTH_TOKEN_ENV: str = "FOXGLOVE_THINKST_API_KEY"
 
 
 def run_thinkst(

@@ -51,6 +51,7 @@ class OperationParameters(BaseModel):
     file_content: str
     model: str
     passwords: list[str]
+    honeytokens: list[str] = []
 
 
 class Manifest(BaseModel):

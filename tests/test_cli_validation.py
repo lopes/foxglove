@@ -206,3 +206,66 @@ def test_empty_team_name_returns_error():
 def test_team_name_with_empty_entry_returns_error():
     result = parse_args(_valid_argv(**{"--teams": "it,,infra"}))
     assert isinstance(result, CliError)
+
+
+def test_honeytokens_missing_defaults_to_empty_list():
+    result = parse_args(_valid_argv())
+    assert isinstance(result, CliArgs)
+    assert result.honeytokens == []
+
+
+def test_honeytokens_single_value():
+    result = parse_args(_valid_argv(**{"--honeytokens": "https://a.canary.tools/x"}))
+    assert isinstance(result, CliArgs)
+    assert result.honeytokens == ["https://a.canary.tools/x"]
+
+
+def test_honeytokens_multiple_values():
+    result = parse_args(
+        _valid_argv(**{"--honeytokens": "https://a.canary.tools/x,host.b.com,https://c.com"})
+    )
+    assert isinstance(result, CliArgs)
+    assert result.honeytokens == [
+        "https://a.canary.tools/x",
+        "host.b.com",
+        "https://c.com",
+    ]
+
+
+def test_honeytokens_empty_string_returns_error():
+    result = parse_args(_valid_argv(**{"--honeytokens": ""}))
+    assert isinstance(result, CliError)
+    assert "honeytoken" in result.message.lower()
+
+
+def test_honeytokens_empty_entry_returns_error():
+    result = parse_args(_valid_argv(**{"--honeytokens": "a,,b"}))
+    assert isinstance(result, CliError)
+    assert "honeytoken" in result.message.lower()
+
+
+def test_honeytokens_too_many_returns_error():
+    tokens = ",".join(f"t{i}" for i in range(21))
+    result = parse_args(_valid_argv(**{"--honeytokens": tokens}))
+    assert isinstance(result, CliError)
+    assert "honeytoken" in result.message.lower()
+
+
+def test_honeytokens_exactly_20_accepted():
+    tokens = ",".join(f"t{i}" for i in range(20))
+    result = parse_args(_valid_argv(**{"--honeytokens": tokens}))
+    assert isinstance(result, CliArgs)
+    assert len(result.honeytokens) == 20
+
+
+def test_honeytokens_entry_too_long_returns_error():
+    too_long = "a" * 257
+    result = parse_args(_valid_argv(**{"--honeytokens": f"ok,{too_long}"}))
+    assert isinstance(result, CliError)
+    assert "honeytoken" in result.message.lower()
+
+
+def test_honeytokens_entry_with_whitespace_returns_error():
+    result = parse_args(_valid_argv(**{"--honeytokens": "ok, with space"}))
+    assert isinstance(result, CliError)
+    assert "honeytoken" in result.message.lower()

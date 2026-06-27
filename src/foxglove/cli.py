@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 
 OPERATION_PATTERN: re.Pattern[str] = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,254}$")
 SUBCOMMANDS: frozenset[str] = frozenset({"generate", "thinkst"})
+MAX_HONEYTOKENS: int = 20
+MAX_HONEYTOKEN_LEN: int = 256
 
 
 @dataclass(frozen=True)
@@ -26,6 +28,7 @@ class CliArgs:
     passwords: list[str]
     resume: bool
     dry_run: bool
+    honeytokens: list[str]
 
 
 @dataclass(frozen=True)
@@ -45,6 +48,7 @@ def _add_generate_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--passwords", default=None)
     parser.add_argument("--resume", action="store_true", default=False)
     parser.add_argument("--dry-run", action="store_true", default=False)
+    parser.add_argument("--honeytokens", default=None)
 
 
 def _validate_generate(args: argparse.Namespace) -> CliArgs | CliError:
@@ -85,6 +89,24 @@ def _validate_generate(args: argparse.Namespace) -> CliArgs | CliError:
 
     passwords = args.passwords.split(",") if args.passwords else list(DEFAULT_PASSWORDS)
 
+    honeytokens: list[str] = []
+    if args.honeytokens is not None:
+        if args.honeytokens == "":
+            return CliError(message="honeytokens must not be empty when flag is given")
+        honeytokens = args.honeytokens.split(",")
+        if any(t == "" for t in honeytokens):
+            return CliError(message="honeytokens must not contain empty entries")
+        if len(honeytokens) > MAX_HONEYTOKENS:
+            return CliError(
+                message=f"honeytokens must contain at most {MAX_HONEYTOKENS} entries"
+            )
+        if any(len(t) > MAX_HONEYTOKEN_LEN for t in honeytokens):
+            return CliError(
+                message=f"each honeytoken must be at most {MAX_HONEYTOKEN_LEN} characters"
+            )
+        if any(any(c.isspace() for c in t) for t in honeytokens):
+            return CliError(message="honeytokens must not contain whitespace")
+
     return CliArgs(
         base_dir=args.base_dir,
         operation=args.operation,
@@ -97,6 +119,7 @@ def _validate_generate(args: argparse.Namespace) -> CliArgs | CliError:
         passwords=passwords,
         resume=args.resume,
         dry_run=args.dry_run,
+        honeytokens=honeytokens,
     )
 
 

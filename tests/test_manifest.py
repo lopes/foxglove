@@ -48,3 +48,34 @@ def test_manifest_exists_true_when_present(tmp_path: Path):
 
 def test_manifest_exists_false_when_missing(tmp_path: Path):
     assert manifest_exists(tmp_path) is False
+
+
+def test_manifest_round_trips_honeytokens(tmp_path: Path):
+    original = Manifest(
+        operation="op_honey",
+        parameters=OperationParameters(
+            base_dir="/tmp",
+            num_files=1,
+            formats=["md"],
+            teams=["it"],
+            company="Acme",
+            file_content="docs",
+            model="claude-sonnet-4-20250514",
+            passwords=["abc"],
+            honeytokens=["https://a.canary.tools/x", "host.b.com"],
+        ),
+        files=[FileEntry(path="a.md", format="md", summary="d")],
+    )
+    write_manifest(original, tmp_path)
+    restored = read_manifest(tmp_path)
+    assert restored is not None
+    assert restored.parameters.honeytokens == ["https://a.canary.tools/x", "host.b.com"]
+
+
+def test_manifest_default_honeytokens_is_empty_list(tmp_path: Path):
+    manifest = _make_manifest()
+    assert manifest.parameters.honeytokens == []
+    write_manifest(manifest, tmp_path)
+    restored = read_manifest(tmp_path)
+    assert restored is not None
+    assert restored.parameters.honeytokens == []

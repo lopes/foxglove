@@ -15,21 +15,32 @@ def generate_file_content(
     company: str,
     teams: list[str],
     file_content: str,
+    honeytokens: list[str] | None = None,
 ) -> str:
+    prompt = (
+        f"Generate realistic content for a {entry.format} file.\n"
+        f"This file belongs to the company: {company}.\n"
+        f"It was created by the {', '.join(teams)} team(s).\n"
+        f"File context: {file_content}\n"
+        f"Specific file description: {entry.summary}\n"
+    )
+    if honeytokens:
+        prompt += (
+            "\nThe following honeytokens MUST be incorporated into the generated "
+            "content where it would be plausible for a document of this kind — as "
+            "URLs in body text, references, signatures, embedded links, contact "
+            "details, footer references, or appendix entries. Distribute them "
+            "naturally across the content; do not list them as a separate block. "
+            "Honeytokens:\n"
+            + "\n".join(honeytokens)
+            + "\n"
+        )
+    prompt += "Return only the file content, no explanation."
+
     response = client.messages.create(
         model=model,
         max_tokens=4096,
-        messages=[{
-            "role": "user",
-            "content": (
-                f"Generate realistic content for a {entry.format} file.\n"
-                f"This file belongs to the company: {company}.\n"
-                f"It was created by the {', '.join(teams)} team(s).\n"
-                f"File context: {file_content}\n"
-                f"Specific file description: {entry.summary}\n"
-                f"Return only the file content, no explanation."
-            ),
-        }],
+        messages=[{"role": "user", "content": prompt}],
     )
     for block in response.content:
         if isinstance(block, TextBlock):
@@ -81,6 +92,7 @@ def generate_all(
                 company=manifest.parameters.company,
                 teams=manifest.parameters.teams,
                 file_content=manifest.parameters.file_content,
+                honeytokens=manifest.parameters.honeytokens,
             )
             write_generated_file(content, entry, operation_dir)
         except Exception as e:

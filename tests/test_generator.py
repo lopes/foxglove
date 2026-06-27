@@ -73,6 +73,33 @@ def test_generate_file_content_prompt_includes_context():
     assert "Quarterly report" in prompt_content
 
 
+def test_generate_file_content_no_honeytokens_omits_instruction():
+    client = MagicMock()
+    client.messages.create.return_value = _make_text_response("content")
+    generate_file_content(
+        client, _entry("a.md"), "test-model",
+        company="Acme", teams=["it"], file_content="docs",
+        honeytokens=[],
+    )
+    prompt: str = client.messages.create.call_args.kwargs["messages"][0]["content"]
+    assert "honeytoken" not in prompt.lower()
+
+
+def test_generate_file_content_includes_honeytokens_when_present():
+    client = MagicMock()
+    client.messages.create.return_value = _make_text_response("content")
+    tokens = ["https://a.canary.tools/x.gif", "host.b.canarytokens.com"]
+    generate_file_content(
+        client, _entry("a.md"), "test-model",
+        company="Acme", teams=["it"], file_content="docs",
+        honeytokens=tokens,
+    )
+    prompt: str = client.messages.create.call_args.kwargs["messages"][0]["content"]
+    assert "honeytoken" in prompt.lower()
+    for tok in tokens:
+        assert tok in prompt
+
+
 def test_write_generated_file_creates_md(tmp_path: Path):
     entry = _entry("sub/file.md")
     write_generated_file("# Hello", entry, tmp_path)

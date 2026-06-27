@@ -38,6 +38,7 @@ def _build_operation_parameters(cli: CliArgs) -> OperationParameters:
         file_content=cli.file_content,
         model=cli.model,
         passwords=cli.passwords,
+        honeytokens=cli.honeytokens,
     )
 
 

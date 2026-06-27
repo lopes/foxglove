@@ -45,7 +45,7 @@ uv run python -m foxglove thinkst remove --domain-hash <your-domain-hash> <canar
 uv run pytest
 
 # Run a single test file
-uv run pytest tests/test_example.py
+uv run pytest tests/test_generator.py
 
 # Run a single test by name
 uv run pytest -k "test_name"
@@ -57,18 +57,24 @@ Requires `ANTHROPIC_API_KEY` for the `generate` subcommand and `THINKST_API_KEY`
 
 - `anthropic` — LLM provider (Claude)
 - `pydantic` — structured output enforcement for campaign planning
+- `httpx` — Thinkst Canary HTTP client
+- `truststore` — OS-level certificate-store integration for HTTPS verification
 - `python-docx`, `openpyxl`, `python-pptx` — Office format generation
-- `reportlab`, `pypdf` — PDF generation and encryption
+- `reportlab`, `pypdf` — PDF generation and encryption (incl. metadata injection)
 
 ## Architecture Notes
 
 - Campaign planning uses Anthropic's native structured output (tool use) with Pydantic model schemas
 - Planning is batched in groups of 50 files, then merged
+- The planner also asks the LLM for a small **authors pool** (5–10 culturally-coherent names) carried on `CampaignPlan.authors` and persisted in the manifest
 - Encrypted PDFs use passwords from a configurable list (cycled), stored in manifest summaries
 - Duplicate file paths from LLM are deduplicated with macOS-style `(N)` suffixes
 - Content generation is sequential (no concurrency in v1)
+- `--honeytokens` are appended to the per-honeyfile prompt with an instruction to weave them naturally; LLM decides distribution across honeyfiles
+- **Realism layer** (`src/foxglove/metadata.py`): `FileMetadata` carries `author` + `created_at`/`modified_at` jittered by `random.randint(1, 25)` days (canarytokens-inspired); writers apply it via `doc.core_properties` / `wb.properties` / `prs.core_properties` / pypdf `add_metadata`, and `generator.py` aligns the filesystem mtime with `os.utime`. The XLSX writer bypasses `wb.save()` because openpyxl's `save_workbook` clobbers `wb.properties.modified` to `datetime.now()` immediately before serialization
+- **Thinkst integration** (`src/foxglove/thinkst/`): thin `httpx` client to `https://<domain-hash>.canary.tools/api/v1/...` with `X-Canary-Auth-Token`; covers `canarytoken/create`, `canarytokens/paginate` (cursor-loop), `canarytoken/delete` (with optional `clear_incidents=true`). Foxglove-minted tokens are tagged in their memo with the constant `FOXGLOVE_TAG = "#foxglove"`, filtered client-side
 - All CLI parameters are validated before any API call
-- See [DESIGN.md](DESIGN.md) for the full technical specification
+- See [DESIGN.md](DESIGN.md) for the full technical specification, [CONTRIBUTING.md](CONTRIBUTING.md) for human-facing contribution rules, and [SECURITY.md](SECURITY.md) for the security disclosure policy
 
 ## Core Philosophy
 

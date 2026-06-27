@@ -250,3 +250,64 @@ def test_generate_all_empty_authors_yields_empty_author_metadata(tmp_path: Path)
 
     assert len(seen) == 1
     assert seen[0].author == ""
+
+
+def test_write_generated_file_sets_mtime_from_metadata(tmp_path: Path):
+    from datetime import UTC, datetime
+    from foxglove.generator import write_generated_file
+    from foxglove.metadata import FileMetadata
+
+    fixed_modified = datetime(2026, 6, 15, 12, 0, 0, tzinfo=UTC)
+    fixed_created = datetime(2026, 6, 1, 9, 0, 0, tzinfo=UTC)
+    meta = FileMetadata(
+        author="Alice", created_at=fixed_created, modified_at=fixed_modified,
+    )
+    entry = _entry("notes.md")
+
+    write_generated_file("hello", entry, tmp_path, metadata=meta)
+
+    file_mtime = (tmp_path / "notes.md").stat().st_mtime
+    assert abs(file_mtime - fixed_modified.timestamp()) < 2
+
+
+def test_write_generated_file_without_metadata_does_not_touch_mtime(tmp_path: Path):
+    import time as _time
+    from foxglove.generator import write_generated_file
+
+    entry = _entry("notes.md")
+    before = _time.time()
+    write_generated_file("hello", entry, tmp_path)
+    after = _time.time()
+    mtime = (tmp_path / "notes.md").stat().st_mtime
+    assert before - 1 <= mtime <= after + 1
+
+
+def test_generate_all_aligns_mtime_with_metadata(tmp_path: Path):
+    from datetime import UTC, datetime
+    import random as _random
+
+    fixed_now = datetime(2026, 5, 1, 10, 0, 0, tzinfo=UTC)
+    files = [_entry("a.md"), _entry("b.md")]
+    manifest = Manifest(
+        operation="op_mtime",
+        parameters=OperationParameters(
+            base_dir="/tmp", num_files=2, formats=["md"], teams=["it"],
+            company="Acme", file_content="docs", model="m", passwords=["p"],
+        ),
+        files=files,
+        authors=["Alice"],
+    )
+    client = MagicMock()
+    client.messages.create.side_effect = [
+        _make_text_response("A"),
+        _make_text_response("B"),
+    ]
+
+    generate_all(
+        client, manifest, tmp_path,
+        rng=_random.Random(0), now=fixed_now,
+    )
+
+    for entry in files:
+        mtime = (tmp_path / entry.path).stat().st_mtime
+        assert abs(mtime - fixed_now.timestamp()) < 2

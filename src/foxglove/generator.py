@@ -1,5 +1,7 @@
+import os
 import random
 import re
+from datetime import datetime
 from pathlib import Path
 
 import anthropic
@@ -71,6 +73,9 @@ def write_generated_file(
         writer(content, file_path, password=password, metadata=metadata)
     else:
         writer(content, file_path, metadata=metadata)
+    if metadata is not None:
+        ts = metadata.modified_at.timestamp()
+        os.utime(file_path, (ts, ts))
 
 
 def generate_all(
@@ -80,6 +85,7 @@ def generate_all(
     resume: bool = False,
     *,
     rng: random.Random | None = None,
+    now: datetime | None = None,
 ) -> int:
     rng = rng if rng is not None else random.Random()
     to_generate = [
@@ -101,7 +107,7 @@ def generate_all(
                 file_content=manifest.parameters.file_content,
                 honeytokens=manifest.parameters.honeytokens,
             )
-            metadata = build_file_metadata(manifest.authors, rng=rng)
+            metadata = build_file_metadata(manifest.authors, rng=rng, now=now)
             write_generated_file(content, entry, operation_dir, metadata=metadata)
         except Exception as e:
             print(f"    Error generating file: {e}")

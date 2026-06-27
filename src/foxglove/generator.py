@@ -1,9 +1,11 @@
+import random
 import re
 from pathlib import Path
 
 import anthropic
 from anthropic.types import TextBlock
 
+from foxglove.metadata import FileMetadata, build_file_metadata
 from foxglove.models import FileEntry, Manifest
 from foxglove.writers import get_writer
 
@@ -57,6 +59,8 @@ def write_generated_file(
     content: str,
     entry: FileEntry,
     operation_dir: Path,
+    *,
+    metadata: FileMetadata | None = None,
 ) -> None:
     file_path = operation_dir / entry.path
     writer = get_writer(entry.format)
@@ -64,9 +68,9 @@ def write_generated_file(
         password = _extract_epdf_password(entry.summary)
         if password is None:
             raise ValueError(f"No password found in EPDF summary: {entry.summary}")
-        writer(content, file_path, password=password)
+        writer(content, file_path, password=password, metadata=metadata)
     else:
-        writer(content, file_path)
+        writer(content, file_path, metadata=metadata)
 
 
 def generate_all(
@@ -74,7 +78,10 @@ def generate_all(
     manifest: Manifest,
     operation_dir: Path,
     resume: bool = False,
+    *,
+    rng: random.Random | None = None,
 ) -> int:
+    rng = rng if rng is not None else random.Random()
     to_generate = [
         entry for entry in manifest.files
         if not (resume and (operation_dir / entry.path).exists())
@@ -94,7 +101,8 @@ def generate_all(
                 file_content=manifest.parameters.file_content,
                 honeytokens=manifest.parameters.honeytokens,
             )
-            write_generated_file(content, entry, operation_dir)
+            metadata = build_file_metadata(manifest.authors, rng=rng)
+            write_generated_file(content, entry, operation_dir, metadata=metadata)
         except Exception as e:
             print(f"    Error generating file: {e}")
             failures += 1

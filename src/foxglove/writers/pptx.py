@@ -4,8 +4,11 @@ from typing import cast
 from pptx import Presentation
 from pptx.text.text import TextFrame
 
+from foxglove.metadata import FileMetadata
 
-def write_pptx(content: str, path: Path) -> None:
+
+def write_pptx(content: str, path: Path, *, metadata: FileMetadata | None = None) -> None:
+    del metadata
     path.parent.mkdir(parents=True, exist_ok=True)
     prs = Presentation()
     slides_content = content.split("---")

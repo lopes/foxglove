@@ -7,6 +7,8 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Flowable, Paragraph, SimpleDocTemplate
 from pypdf import PdfReader, PdfWriter
 
+from foxglove.metadata import FileMetadata
+
 
 def _content_to_flowables(content: str) -> Sequence[Flowable]:
     styles = getSampleStyleSheet()
@@ -20,7 +22,14 @@ def _content_to_flowables(content: str) -> Sequence[Flowable]:
     return flowables
 
 
-def write_epdf(content: str, path: Path, password: str) -> None:
+def write_epdf(
+    content: str,
+    path: Path,
+    password: str,
+    *,
+    metadata: FileMetadata | None = None,
+) -> None:
+    del metadata
     path.parent.mkdir(parents=True, exist_ok=True)
 
     buffer = BytesIO()

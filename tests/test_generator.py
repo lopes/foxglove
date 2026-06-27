@@ -190,3 +190,63 @@ def test_generate_all_resume_progress_skips_existing_files(
     assert len(progress_lines) == 2
     assert "1/2:" in progress_lines[0]
     assert "2/2:" in progress_lines[1]
+
+
+def test_generate_all_passes_metadata_to_writer(tmp_path: Path):
+    from unittest.mock import patch
+    from foxglove.metadata import FileMetadata
+
+    files = [_entry("a.md"), _entry("b.md")]
+    manifest = Manifest(
+        operation="op_meta",
+        parameters=OperationParameters(
+            base_dir="/tmp", num_files=2, formats=["md"], teams=["it"],
+            company="Acme", file_content="docs",
+            model="m", passwords=["p"],
+        ),
+        files=files,
+        authors=["Alice Dupont", "Bob Schmidt"],
+    )
+    client = MagicMock()
+    client.messages.create.side_effect = [
+        _make_text_response("Content A"),
+        _make_text_response("Content B"),
+    ]
+
+    seen_metadata: list[FileMetadata] = []
+
+    def fake_writer(content: str, path: Path, *, metadata: FileMetadata | None = None) -> None:
+        path.write_text(content)
+        assert metadata is not None
+        seen_metadata.append(metadata)
+
+    with patch("foxglove.generator.get_writer", return_value=fake_writer):
+        failures = generate_all(client, manifest, tmp_path)
+
+    assert failures == 0
+    assert len(seen_metadata) == 2
+    for meta in seen_metadata:
+        assert meta.author in {"Alice Dupont", "Bob Schmidt"}
+        assert meta.created_at < meta.modified_at
+
+
+def test_generate_all_empty_authors_yields_empty_author_metadata(tmp_path: Path):
+    from unittest.mock import patch
+    from foxglove.metadata import FileMetadata
+
+    manifest = _make_manifest([_entry("a.md")])
+    client = MagicMock()
+    client.messages.create.return_value = _make_text_response("Content")
+
+    seen: list[FileMetadata] = []
+
+    def fake_writer(content: str, path: Path, *, metadata: FileMetadata | None = None) -> None:
+        path.write_text(content)
+        assert metadata is not None
+        seen.append(metadata)
+
+    with patch("foxglove.generator.get_writer", return_value=fake_writer):
+        generate_all(client, manifest, tmp_path)
+
+    assert len(seen) == 1
+    assert seen[0].author == ""

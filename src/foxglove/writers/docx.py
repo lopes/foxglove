@@ -2,8 +2,11 @@ from pathlib import Path
 
 from docx import Document
 
+from foxglove.metadata import FileMetadata
 
-def write_docx(content: str, path: Path) -> None:
+
+def write_docx(content: str, path: Path, *, metadata: FileMetadata | None = None) -> None:
+    del metadata
     path.parent.mkdir(parents=True, exist_ok=True)
     doc = Document()
     for line in content.split("\n"):

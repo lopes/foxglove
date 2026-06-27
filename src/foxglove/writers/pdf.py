@@ -6,6 +6,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import Flowable, Paragraph, SimpleDocTemplate
 from reportlab.lib.styles import getSampleStyleSheet
 
+from foxglove.metadata import FileMetadata
+
 
 def _content_to_flowables(content: str) -> Sequence[Flowable]:
     styles = getSampleStyleSheet()
@@ -19,7 +21,8 @@ def _content_to_flowables(content: str) -> Sequence[Flowable]:
     return flowables
 
 
-def write_pdf(content: str, path: Path) -> None:
+def write_pdf(content: str, path: Path, *, metadata: FileMetadata | None = None) -> None:
+    del metadata
     path.parent.mkdir(parents=True, exist_ok=True)
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)

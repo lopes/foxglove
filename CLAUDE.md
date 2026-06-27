@@ -4,11 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Foxglove is an AI-powered adversary engagement tool that generates high-fidelity, context-aware decoy files using Anthropic's Claude. It automates creation of convincing fake data for defensive security operations, aligned with the MITRE Engage framework.
+Foxglove is an AI-powered adversary engagement tool that generates high-fidelity, context-aware **honeyfiles** using Anthropic's Claude, and optionally mints and embeds **honeytokens** from a Thinkst Canary console. It automates creation of convincing fake data for defensive security operations, aligned with the MITRE Engage framework.
 
-**Workflow:** Context ingestion → Campaign planning (structured JSON via Pydantic) → Content generation per file → File assembly to disk.
+### Glossary
 
-**Supported formats:** PDF, Encrypted PDF (EPDF), DOCX, XLSX, PPTX, MD, CONF, JSON, XML.
+- **honeyfile** — a decoy document produced by `foxglove generate` (PDF, DOCX, XLSX, etc.).
+- **honeytoken** — a callback URL/hostname minted on a Thinkst Canary console via `foxglove thinkst create`. Honeytokens can be passed to `foxglove generate --honeytokens` so the LLM weaves them into honeyfile content.
+
+**Workflow (two moments):**
+
+1. *Optional* — mint honeytokens via `foxglove thinkst create` and note their callback URLs/hostnames.
+2. Generate honeyfiles via `foxglove generate ... [--honeytokens <urls>]`. CLI validation → context ingestion → campaign planning (structured JSON via Pydantic) → content generation per honeyfile → file assembly to disk.
+
+**Supported honeyfile formats:** PDF, Encrypted PDF (EPDF), DOCX, XLSX, PPTX, MD, CONF, JSON, XML.
 
 ## Development Commands
 
@@ -16,15 +24,22 @@ Foxglove is an AI-powered adversary engagement tool that generates high-fidelity
 # Install/sync dependencies
 uv sync
 
-# Run the tool
-uv run python -m foxglove \
+# Generate honeyfiles
+uv run python -m foxglove generate \
   --base-dir /tmp \
   --operation op_alpha \
   --num-files 10 \
   --formats pdf,docx,xlsx \
   --teams it,infra \
   --company "description of target company" \
-  --file-content "description of expected file content"
+  --file-content "description of expected file content" \
+  [--honeytokens https://x.canary.tools/...,host.y.canarytokens.com]
+
+# Manage honeytokens on a Thinkst Canary console
+uv run python -m foxglove thinkst create \
+  --console <your-console> --kind dns --flock flock:default --memo "..."
+uv run python -m foxglove thinkst list --console <your-console>
+uv run python -m foxglove thinkst remove --console <your-console> <canarytoken-id>
 
 # Run tests
 uv run pytest
@@ -36,7 +51,7 @@ uv run pytest tests/test_example.py
 uv run pytest -k "test_name"
 ```
 
-Requires `ANTHROPIC_API_KEY` environment variable.
+Requires `ANTHROPIC_API_KEY` for the `generate` subcommand and `THINKST_AUTH_TOKEN` for the `thinkst` subcommands.
 
 ## Key Dependencies
 

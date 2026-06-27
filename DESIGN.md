@@ -3,18 +3,31 @@
 This document captures the agreed design decisions for Foxglove v1. It serves as the single source of truth for implementation.
 
 
+## Glossary
+
+- **honeyfile** — a decoy document produced by `foxglove generate`.
+- **honeytoken** — a callback URL/hostname minted on a Thinkst Canary console via `foxglove thinkst create`, optionally embedded into honeyfile content.
+
+
 ## Workflow
 
 ```
-CLI validation → Context ingestion → Campaign planning (batched, Pydantic-enforced JSON)
-→ Content generation per file (sequential) → File assembly to disk
+CLI dispatch (generate | thinkst)
+   ├── generate: validation → context ingestion → campaign planning (batched, Pydantic-enforced JSON)
+   │             → content generation per honeyfile (sequential, optionally embedding honeytokens)
+   │             → file assembly to disk
+   └── thinkst:  validation → ThinkstClient call → result rendered to stdout
 ```
 
 
 ## CLI Interface
 
+The CLI is organised around two subcommands: `generate` (produces honeyfiles) and `thinkst` (manages honeytokens on a Thinkst Canary console).
+
+### `foxglove generate`
+
 ```
-uv run python -m foxglove \
+uv run python -m foxglove generate \
   --base-dir /tmp \
   --operation op_alpha \
   --num-files 99 \
@@ -24,11 +37,12 @@ uv run python -m foxglove \
   --file-content "files present information in IT infra..." \
   [--model claude-sonnet-4-20250514] \
   [--passwords foobar,Checkbox1] \
+  [--honeytokens https://x.canary.tools/x.gif,host.y.canarytokens.com] \
   [--resume] \
   [--dry-run]
 ```
 
-### Parameters
+#### Parameters
 
 | Parameter        | Required | Validation                                                  | Default                     |
 |------------------|----------|-------------------------------------------------------------|-----------------------------|
@@ -41,8 +55,31 @@ uv run python -m foxglove \
 | `--file-content` | Yes      | Non-empty string, max 1024 chars                            | —                           |
 | `--model`        | No       | Valid Anthropic model identifier                            | `claude-sonnet-4-20250514`  |
 | `--passwords`    | No       | Comma-separated list of passwords for EPDF files            | `["abc123", "root"]`        |
+| `--honeytokens`  | No       | Comma-separated callbacks (≤20 entries, each ≤256 chars, no whitespace, no empty entries) | —             |
 | `--resume`       | No       | Flag; enables automatic resume without prompt               | `false`                     |
 | `--dry-run`      | No       | Flag; outputs plan to screen, writes nothing to disk        | `false`                     |
+
+### `foxglove thinkst <action>`
+
+Manages honeytokens on a Thinkst Canary console. Tokens minted by Foxglove carry the memo prefix `#foxglove`, which `thinkst list` filters on client-side.
+
+```
+foxglove thinkst create --console <c> --kind <k> --flock <flock_id> --memo "<text>"
+foxglove thinkst list   --console <c> [--flock <flock_id>] [--kind <k>] [--json]
+foxglove thinkst remove --console <c> <canarytoken-id>
+```
+
+`--console` is the URL prefix in `https://<console>.canary.tools/api/v1/...` and must match `^[a-z0-9-]+$`.
+
+Auth: env var `THINKST_AUTH_TOKEN` sent as `X-Canary-Auth-Token` HTTP header.
+
+Supported `--kind` values (v1, no-extra-params kinds only): `dns`, `http`, `aws-id`, `slack-api`, `qr-code`, `windows-dir`, `wireguard`, `credit-card`, `mysql-dump`, `svn`, `sql`. Kinds requiring file uploads or extra params (`doc-msword`, `cloned-web`, `signed-exe`, …) are rejected with a helpful message.
+
+`thinkst create` prints the new id plus the callback URL/hostname so the operator can copy them into `generate --honeytokens`.
+
+`thinkst list` cursor-loops `/api/v1/canarytokens/paginate`, then filters memos containing `#foxglove` client-side. Default output is `<canarytoken-id> | <kind> | <flock_id> | <memo>`; `--json` switches to a JSON array (one object per token, fields including `created_printable` for scripting).
+
+`thinkst remove` deletes a single id via `/api/v1/canarytoken/delete`. If Canary blocks deletion because of unacknowledged incidents, the runner prompts y/n and on yes retries with `clear_incidents=true`.
 
 ### Supported Formats
 
@@ -53,7 +90,8 @@ uv run python -m foxglove \
 - All parameters are validated before any API call is made.
 - If any parameter is invalid, the program exits immediately with an error message and a non-zero exit code.
 - If `--formats` contains an unsupported format, the entire run fails (not a partial skip).
-- `ANTHROPIC_API_KEY` environment variable must be set; fail immediately at startup if missing.
+- For `generate`, `ANTHROPIC_API_KEY` environment variable must be set; fail immediately at startup if missing.
+- For `thinkst`, `THINKST_AUTH_TOKEN` environment variable must be set; fail immediately if missing.
 
 
 ## Constants
@@ -66,14 +104,15 @@ uv run python -m foxglove \
 
 ## Exit Codes
 
-| Code | Meaning                                    |
-|------|--------------------------------------------|
-| 0    | Success                                    |
-| 1    | CLI validation error (bad parameters)      |
-| 2    | Environment error (missing API key, etc.)  |
-| 3    | API error (network, auth, rate limit)      |
-| 4    | Partial completion (some files skipped)    |
-| 5    | Planning error (LLM returned invalid plan) |
+| Code | Meaning                                            |
+|------|----------------------------------------------------|
+| 0    | Success                                            |
+| 1    | CLI validation error (bad parameters)              |
+| 2    | Environment error (missing API key, etc.)          |
+| 3    | API error (network, auth, rate limit)              |
+| 4    | Partial completion (some honeyfiles skipped)       |
+| 5    | Planning error (LLM returned invalid plan)         |
+| 6    | Thinkst API error (auth, 4xx, 5xx, incidents block)|
 
 
 ## Resume Behavior
@@ -96,7 +135,7 @@ On resume, Foxglove loads the manifest and iterates through its entries. If the 
 
 ## Manifest (`MANIFEST.json`)
 
-Written to `<base-dir>/<operation>/MANIFEST.json`. Always generated on every run.
+Written to `<base-dir>/<operation>/MANIFEST.json`. Always generated on every `generate` run.
 
 ```json
 {
@@ -109,7 +148,8 @@ Written to `<base-dir>/<operation>/MANIFEST.json`. Always generated on every run
     "company": "mid-sized fintech in Luxembourg...",
     "file_content": "files present information in IT infra...",
     "model": "claude-sonnet-4-20250514",
-    "passwords": ["abc123", "root"]
+    "passwords": ["abc123", "root"],
+    "honeytokens": ["https://abc.canary.tools/x.gif"]
   },
   "files": [
     {
@@ -134,8 +174,9 @@ Written to `<base-dir>/<operation>/MANIFEST.json`. Always generated on every run
 ### Manifest Notes
 
 - `path` is relative to the operation root (`<base-dir>/<operation>/`).
-- For `epdf` files, the password is included in the `summary` field as: `"<summary>. Password: <password>"`.
+- For `epdf` honeyfiles, the password is included in the `summary` field as: `"<summary>. Password: <password>"`.
 - The `parameters` block stores the original CLI parameters for reproducibility and resume validation.
+- `parameters.honeytokens` is the list passed via `--honeytokens` (empty list if the flag was omitted). The campaign's honeytoken set is recorded for audit; distribution across individual honeyfiles is LLM-decided and not tracked per-file.
 
 
 ## Duplicate File Path Handling
@@ -159,7 +200,7 @@ Deduplication is applied during plan post-processing, before any files are writt
 
 ## Content Generation
 
-- Sequential (one file at a time, no concurrency).
+- Sequential (one honeyfile at a time, no concurrency).
 - Progress output to stdout:
   ```
   Generating file 68/99: /tmp/op_alpha/foo/bar/foobar.docx
@@ -169,7 +210,8 @@ Deduplication is applied during plan post-processing, before any files are writt
   Generating file 83/99: /tmp/op_alpha/foo/bar/foobar.pptx
       Error generating file: <error details>
   ```
-- If any files were skipped, exit with code 4 (partial completion).
+- If any honeyfiles were skipped, exit with code 4 (partial completion).
+- When `parameters.honeytokens` is non-empty, the per-honeyfile prompt is appended with an instruction asking the LLM to weave each honeytoken naturally into the content (links, references, signatures, footers). Distribution across honeyfiles is LLM-decided; a one-page memo may use none, a directory listing may use several.
 
 
 ## EPDF Password Handling
@@ -179,6 +221,31 @@ Deduplication is applied during plan post-processing, before any files are writt
 - During planning, passwords are assigned to EPDF files by cycling through the password list.
 - Passwords are recorded in the manifest's summary field for each EPDF entry.
 - Encrypted PDFs use the standard `.pdf` extension on disk (not `.epdf`). The `format` field in the manifest distinguishes them. Any `.epdf` extensions from the LLM are normalized to `.pdf` during post-processing.
+
+
+## Thinkst Canary Integration
+
+### HTTP Layer
+
+- `httpx.Client(base_url=f"https://{console}.canary.tools", timeout=30)`.
+- Auth header `X-Canary-Auth-Token: <THINKST_AUTH_TOKEN>`.
+- `truststore.inject_into_ssl()` already covers HTTPS verification with the OS cert store.
+
+### Endpoint Mapping
+
+| Action | Endpoint                              | Method | Body / query                                    |
+|--------|---------------------------------------|--------|-------------------------------------------------|
+| create | `/api/v1/canarytoken/create`          | POST   | `kind`, `memo` (already prefixed `#foxglove `), `flock_id` |
+| list   | `/api/v1/canarytokens/paginate`       | GET    | `limit=100`, optional `flock_id`, `cursor`; client-side `#foxglove` and `kind` filter |
+| remove | `/api/v1/canarytoken/delete`          | POST   | `canarytoken=<id>`; on incidents-block, retry with `clear_incidents=true` after user confirmation |
+
+### Memo Tagging
+
+Foxglove-created honeytokens have memo `#foxglove <user-supplied-memo>` (plain prefix). The constant `FOXGLOVE_TAG = "#foxglove"` lives in `foxglove.thinkst.__init__`. Listing filters the marker client-side because the Canary search endpoint's behaviour with `#` punctuation is unspecified.
+
+### Honeytoken kinds supported in v1
+
+Limited to no-extra-params kinds whose callback is a URL or hostname: `dns`, `http`, `aws-id`, `slack-api`, `qr-code`, `windows-dir`, `wireguard`, `credit-card`, `mysql-dump`, `svn`, `sql`.
 
 
 ## Format-Specific Generation Notes
@@ -202,13 +269,19 @@ Deduplication is applied during plan post-processing, before any files are writt
 foxglove/
 ├── src/foxglove/
 │   ├── __init__.py         # Package exports
-│   ├── __main__.py         # Entrypoint (python -m foxglove)
-│   ├── cli.py              # CLI argument parsing and validation
+│   ├── __main__.py         # Entrypoint (python -m foxglove); dispatches generate vs thinkst
+│   ├── cli.py              # Root CLI parser (subcommand dispatch) + generate validation
 │   ├── planner.py          # Campaign planning (LLM structured output)
-│   ├── generator.py        # Content generation orchestration
+│   ├── generator.py        # Honeyfile content generation orchestration
 │   ├── manifest.py         # Manifest read/write
-│   ├── models.py           # Pydantic models (CampaignPlan, FileEntry, etc.)
+│   ├── models.py           # Pydantic models (CampaignPlan, FileEntry, OperationParameters, …)
 │   ├── resume.py           # Resume action logic
+│   ├── thinkst/
+│   │   ├── __init__.py     # FOXGLOVE_TAG, SUPPORTED_KINDS
+│   │   ├── cli.py          # parse_thinkst_args; ThinkstCreateArgs/ListArgs/RemoveArgs
+│   │   ├── client.py       # ThinkstClient (httpx); ThinkstApiError, IncidentsBlockedError
+│   │   ├── models.py       # Pydantic: CreateTokenResult, TokenSummary
+│   │   └── runner.py       # run_thinkst (create / list / remove)
 │   └── writers/
 │       ├── __init__.py     # Writer dispatch (get_writer)
 │       ├── pdf.py          # PDF writer
@@ -221,7 +294,7 @@ foxglove/
 │       ├── json.py         # JSON writer
 │       └── xml.py          # XML writer
 ├── tests/
-│   └── ...                 # Tests organized by behavior
+│   └── ...                 # Tests organised by behaviour
 ├── CLAUDE.md
 ├── DESIGN.md
 ├── README.md

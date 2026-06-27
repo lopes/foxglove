@@ -3,25 +3,33 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
 
-Foxglove is an AI-powered adversary engagement tool designed to automatically generate high-fidelity, context-aware decoy files.
+Foxglove is an AI-powered adversary engagement tool that automatically generates high-fidelity, context-aware **honeyfiles** and optionally mints and embeds **honeytokens** from a Thinkst Canary console.
 
 Strongly inspired by Cliff Stoll's 1986 story, *[The Cuckoo's Egg](https://lopes.id/log/review-cuckoos-egg/)*, Foxglove automates the creation of convincing fake data to buy defenders time, track adversaries, and map their behavior.
 
-By strategically placing these files in your environment, you align with the **MITRE Engage** framework to *Expose* adversary presence, *Affect* their movement, and *Elicit* actionable intelligence. Once an adversary interacts with these files, defenders can trigger alerts, deploy embedded honeytokens, mislead the attacker with fake intelligence, or simply delay their lateral movement.
+By strategically placing honeyfiles in your environment, you align with the **MITRE Engage** framework to *Expose* adversary presence, *Affect* their movement, and *Elicit* actionable intelligence. Once an adversary interacts with these files, defenders can trigger alerts via embedded honeytokens, mislead the attacker with fake intelligence, or simply delay their lateral movement.
 
 > [!NOTE]
 > Foxglove is designed for authorized adversary engagement, defensive research, and authorized penetration testing. Do not use this tool on networks where you do not have explicit permission to deploy deceptive artifacts.
 
 
+## Glossary
+
+- **honeyfile** — a decoy document produced by `foxglove generate` (PDF, DOCX, XLSX, etc.).
+- **honeytoken** — a callback URL/hostname minted on a Thinkst Canary console via `foxglove thinkst create`. Honeytokens can be passed to `foxglove generate --honeytokens` so the LLM weaves them into honeyfile content as plausible links, references, or footers.
+
+
 ## How it Works
-Creating convincing decoy files manually is tedious and repetitive. Foxglove leverages Anthropic's Claude to handle this dynamically:
+Creating convincing honeyfiles manually is tedious and repetitive. Foxglove uses a two-moment workflow:
 
-1. **Context Ingestion:** The agent reads operator-defined parameters: base directory, operation name, target file count, file formats, and the specific narrative context (e.g., mimicked teams, corporate environment, tech stack).
-2. **Campaign Planning (Structured Data):** The LLM generates a structured roadmap of the decoys, defining realistic file paths, names, types, and summaries. This step forces a structured JSON output enforced via Pydantic, guaranteeing the LLM's response maps perfectly to internal data objects. For encrypted files, passwords are assigned and stored in the manifest.
-3. **Content Generation:** Foxglove iterates through the parsed plan, prompting the LLM to write convincing, context-aligned content for each specific file.
-4. **File Assembly:** The tool compiles the generated text into the requested formats and writes them to the target operation directory.
+**Moment 1 (optional) — Mint honeytokens.** Run `foxglove thinkst create` once per callback. Each call prints a `canarytoken` id plus a URL/hostname; note these for the next moment. Honeyfiles created by Foxglove are tagged in their memo with `#foxglove` so they're easy to list and remove later.
 
-Operators can easily review the generated directory and manually inject specific honeytokens (like canary tokens or fake AWS keys) into the highest-value decoys.
+**Moment 2 — Generate honeyfiles.** Run `foxglove generate ... [--honeytokens <urls>]` to produce a directory of context-aware honeyfiles. Behind the scenes:
+
+1. **Context Ingestion:** the agent reads operator-defined parameters (base directory, operation name, target file count, formats, mimicked teams, corporate context).
+2. **Campaign Planning (Structured Data):** the LLM generates a structured roadmap of the honeyfiles — realistic file paths, names, types, and summaries — enforced via Pydantic for a guaranteed-shape JSON. EPDF passwords are assigned and stored in the manifest.
+3. **Content Generation:** Foxglove iterates through the plan, prompting the LLM to write context-aligned content per honeyfile. If `--honeytokens` was given, the LLM is instructed to weave them naturally into the text as links, references, or footers.
+4. **File Assembly:** the tool compiles the generated text into the requested formats and writes them to the operation directory.
 
 
 ## Supported File Formats
@@ -52,39 +60,45 @@ export ANTHROPIC_API_KEY="sk-ant-your-api-key-here"
 
 
 ## Usage
+
+The CLI is structured around two subcommands: `generate` (honeyfiles) and `thinkst` (honeytokens on a Thinkst Canary console).
+
+### `foxglove generate`
 ```sh
-uv run python -m foxglove \
+uv run python -m foxglove generate \
   --base-dir /tmp \
   --operation op_alpha \
   --num-files 99 \
   --formats pdf,epdf,docx,xlsx,conf \
   --teams it,infra,financial \
   --company "mid-sized fintech in Luxembourg, focusing at lending money to people, <50 employees" \
-  --file-content "files present information in IT infra, from stack used (MS-AD, zabbix, Cisco ISE, Jamf), including some credentials and old URLs/IP addresses. financial info in the file server includes financial reports and confidential board decision and tax info."
+  --file-content "files present information in IT infra, from stack used (MS-AD, zabbix, Cisco ISE, Jamf), including some credentials and old URLs/IP addresses. financial info in the file server includes financial reports and confidential board decision and tax info." \
+  [--honeytokens https://x.canary.tools/x.gif,host.y.canarytokens.com]
 ```
 
-This generates a structured directory at `/tmp/op_alpha` containing subfolders and 99 context-aware files mimicking a mid-sized Luxembourg fintech.
+This generates a structured directory at `/tmp/op_alpha` containing subfolders and 99 context-aware honeyfiles. When `--honeytokens` is given, the LLM is instructed to weave each token naturally into honeyfile content (as links, references, contact details, or footers).
 
-### Parameters
-| Parameter        | Required | Description                                         | Default                    |
-|------------------|----------|-----------------------------------------------------|----------------------------|
-| `--base-dir`     | Yes      | Existing, writable directory for output              | —                          |
-| `--operation`    | Yes      | Operation name (filesystem-safe identifier)          | —                          |
-| `--num-files`    | Yes      | Number of files to generate (1–200)                  | —                          |
-| `--formats`      | Yes      | Comma-separated formats (pdf,epdf,docx,xlsx,pptx,md,conf,json,xml) | —     |
-| `--teams`        | Yes      | Comma-separated team names for context               | —                          |
-| `--company`      | Yes      | Company description for context (max 256 chars)      | —                          |
-| `--file-content` | Yes      | Description of expected content (max 1024 chars)     | —                          |
-| `--model`        | No       | Anthropic model identifier                           | `claude-sonnet-4-20250514` |
-| `--passwords`    | No       | Comma-separated passwords for encrypted PDFs         | `abc123,root`              |
-| `--resume`       | No       | Resume a previously interrupted operation             | `false`                    |
-| `--dry-run`      | No       | Show plan without writing files                       | `false`                    |
+#### Parameters
+| Parameter        | Required | Description                                                                                 | Default                    |
+|------------------|----------|---------------------------------------------------------------------------------------------|----------------------------|
+| `--base-dir`     | Yes      | Existing, writable directory for output                                                     | —                          |
+| `--operation`    | Yes      | Operation name (filesystem-safe identifier)                                                 | —                          |
+| `--num-files`    | Yes      | Number of honeyfiles to generate (1–200)                                                    | —                          |
+| `--formats`      | Yes      | Comma-separated formats (pdf,epdf,docx,xlsx,pptx,md,conf,json,xml)                          | —                          |
+| `--teams`        | Yes      | Comma-separated team names for context                                                      | —                          |
+| `--company`      | Yes      | Company description for context (max 256 chars)                                             | —                          |
+| `--file-content` | Yes      | Description of expected content (max 1024 chars)                                            | —                          |
+| `--model`        | No       | Anthropic model identifier                                                                  | `claude-sonnet-4-20250514` |
+| `--passwords`    | No       | Comma-separated passwords for encrypted PDFs                                                | `abc123,root`              |
+| `--resume`       | No       | Resume a previously interrupted operation                                                   | `false`                    |
+| `--dry-run`      | No       | Show plan without writing honeyfiles                                                        | `false`                    |
+| `--honeytokens`  | No       | Comma-separated callback URLs/hostnames to weave into honeyfile content (≤20 entries, ≤256 chars each, no whitespace) | —             |
 
-### Dry Run
-Preview the campaign plan without creating any files:
+#### Dry Run
+Preview the campaign plan without creating any honeyfiles:
 
 ```sh
-uv run python -m foxglove \
+uv run python -m foxglove generate \
   --base-dir /tmp \
   --operation op_alpha \
   --num-files 10 \
@@ -95,30 +109,44 @@ uv run python -m foxglove \
   --dry-run
 ```
 
-### Resume
-If generation is interrupted, resume where you left off:
+#### Resume
+If generation is interrupted, resume where you left off by appending `--resume` to the same `generate` invocation.
+
+### `foxglove thinkst`
+
+Mints, lists, and removes honeytokens on a Thinkst Canary console. Foxglove tags each honeytoken's memo with `#foxglove` so you can later list and remove only the ones it created.
+
+Required env var: `THINKST_AUTH_TOKEN` (your Canary API auth token).
+
+`--console` is the URL prefix of your console: in `https://acme.canary.tools/api/v1/...`, the console is `acme`.
 
 ```sh
-uv run python -m foxglove \
-  --base-dir /tmp \
-  --operation op_alpha \
-  --num-files 10 \
-  --formats md,conf,json \
-  --teams infosec \
-  --company "small IT company" \
-  --file-content "internal documentation" \
-  --resume
+# Mint a honeytoken
+uv run python -m foxglove thinkst create \
+  --console acme \
+  --kind dns \
+  --flock flock:default \
+  --memo "Q3 billing report"
+
+# List Foxglove-tagged honeytokens
+uv run python -m foxglove thinkst list --console acme [--flock flock:abc] [--kind dns] [--json]
+
+# Remove one by id
+uv run python -m foxglove thinkst remove --console acme <canarytoken-id>
 ```
 
+Supported `--kind` values (v1, callback-only): `dns`, `http`, `aws-id`, `slack-api`, `qr-code`, `windows-dir`, `wireguard`, `credit-card`, `mysql-dump`, `svn`, `sql`.
+
 ### Exit Codes
-| Code | Meaning                                    |
-|------|--------------------------------------------|
-| 0    | Success                                    |
-| 1    | CLI validation error                       |
-| 2    | Environment error (missing API key)        |
-| 3    | API error (network, auth, rate limit)      |
-| 4    | Partial completion (some files failed)     |
-| 5    | Planning error (invalid LLM response)      |
+| Code | Meaning                                            |
+|------|----------------------------------------------------|
+| 0    | Success                                            |
+| 1    | CLI validation error                               |
+| 2    | Environment error (missing API key)                |
+| 3    | API error (network, auth, rate limit)              |
+| 4    | Partial completion (some honeyfiles failed)        |
+| 5    | Planning error (invalid LLM response)              |
+| 6    | Thinkst API error (auth, 4xx, 5xx, incidents block)|
 
 
 ## Development

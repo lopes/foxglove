@@ -115,7 +115,7 @@ def _summary(**overrides: object) -> TokenSummary:
         "canarytoken": "t-1",
         "kind": "dns",
         "flock_id": "flock:default",
-        "memo": f"{FOXGLOVE_TAG} marketing decoy",
+        "memo": f"{FOXGLOVE_TAG} marketing folder",
         "created_printable": "2026-06-27 12:00:00 (UTC)",
     }
     return TokenSummary.model_validate({**base, **overrides})

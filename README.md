@@ -1,11 +1,14 @@
-# Foxglove
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
-
 <p align="center">
   <img src="assets/foxglove-logo.svg" alt="Foxglove" width="160">
 </p>
+
+<p align="center">
+  <a href="https://github.com/lopes/foxglove/actions/workflows/tests.yml"><img src="https://github.com/lopes/foxglove/actions/workflows/tests.yml/badge.svg" alt="CI"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.14+-blue.svg" alt="Python 3.14+"></a>
+</p>
+
+# Foxglove
 
 **Foxglove generates high-fidelity decoy documents — *honeyfiles* — and optionally mints and embeds Thinkst Canary callbacks — *honeytokens* — into them.** It pairs Anthropic's Claude (for context-aware content) with Thinkst Canary (for verifiable detonations), so defenders can drop authentic-looking bait into their environments and get real alerts the moment an adversary touches it.
 

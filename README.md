@@ -3,49 +3,32 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
 
-Foxglove is an AI-powered adversary engagement tool that automatically generates high-fidelity, context-aware **honeyfiles** and optionally mints and embeds **honeytokens** from a Thinkst Canary console.
+**Foxglove generates high-fidelity decoy documents — *honeyfiles* — and optionally mints and embeds Thinkst Canary callbacks — *honeytokens* — into them.** It pairs Anthropic's Claude (for context-aware content) with Thinkst Canary (for verifiable detonations), so defenders can drop authentic-looking bait into their environments and get real alerts the moment an adversary touches it.
 
-Strongly inspired by Cliff Stoll's 1986 story, *[The Cuckoo's Egg](https://lopes.id/log/review-cuckoos-egg/)*, Foxglove automates the creation of convincing fake data to buy defenders time, track adversaries, and map their behavior.
-
-By strategically placing honeyfiles in your environment, you align with the **MITRE Engage** framework to *Expose* adversary presence, *Affect* their movement, and *Elicit* actionable intelligence. Once an adversary interacts with these files, defenders can trigger alerts via embedded honeytokens, mislead the attacker with fake intelligence, or simply delay their lateral movement.
+Inspired by Cliff Stoll's *[The Cuckoo's Egg](https://lopes.id/log/review-cuckoos-egg/)*, Foxglove aligns with the **MITRE Engage** framework to *Expose*, *Affect*, and *Elicit* adversary behaviour through deception.
 
 > [!NOTE]
-> Foxglove is designed for authorized adversary engagement, defensive research, and authorized penetration testing. Do not use this tool on networks where you do not have explicit permission to deploy deceptive artifacts.
+> **A name with history.** Foxglove was previously called **Antlion** — both names capture the same idea (a lure that punishes intrusion), through different metaphors. The project was renamed on **26 June 2026** to align with its "poisonous flower" theme: *Digitalis purpurea* is striking to look at and toxic to anyone who handles it carelessly. Bait that looks innocent, then bites.
+
+> [!IMPORTANT]
+> Foxglove is for **authorised** adversary engagement, defensive research, and authorised penetration testing only. Do not deploy deceptive artifacts on networks where you don't have explicit permission.
 
 
 ## Glossary
 
 - **honeyfile** — a decoy document produced by `foxglove generate` (PDF, DOCX, XLSX, etc.).
-- **honeytoken** — a callback URL/hostname minted on a Thinkst Canary console via `foxglove thinkst create`. Honeytokens can be passed to `foxglove generate --honeytokens` so the LLM weaves them into honeyfile content as plausible links, references, or footers.
+- **honeytoken** — a callback URL/hostname minted on a Thinkst Canary console via `foxglove thinkst create`. Honeytokens can be passed to `foxglove generate --honeytokens` so the LLM weaves them naturally into honeyfile content.
 
 
-## How it Works
-Creating convincing honeyfiles manually is tedious and repetitive. Foxglove uses a two-moment workflow:
+## Prerequisites
 
-**Moment 1 (optional) — Mint honeytokens.** Run `foxglove thinkst create` once per callback. Each call prints a `canarytoken` id plus a URL/hostname; note these for the next moment. Honeyfiles created by Foxglove are tagged in their memo with `#foxglove` so they're easy to list and remove later.
-
-**Moment 2 — Generate honeyfiles.** Run `foxglove generate ... [--honeytokens <urls>]` to produce a directory of context-aware honeyfiles. Behind the scenes:
-
-1. **Context Ingestion:** the agent reads operator-defined parameters (base directory, operation name, target file count, formats, mimicked teams, corporate context).
-2. **Campaign Planning (Structured Data):** the LLM generates a structured roadmap of the honeyfiles — realistic file paths, names, types, and summaries — enforced via Pydantic for a guaranteed-shape JSON. EPDF passwords are assigned and stored in the manifest.
-3. **Content Generation:** Foxglove iterates through the plan, prompting the LLM to write context-aligned content per honeyfile. If `--honeytokens` was given, the LLM is instructed to weave them naturally into the text as links, references, or footers.
-4. **File Assembly:** the tool compiles the generated text into the requested formats and writes them to the operation directory.
-
-
-## Supported File Formats
-`PDF`, `Encrypted PDF`, `DOCX`, `XLSX`, `PPTX`, `Markdown`, `CONF`, `JSON`, `XML`
-
-
-## Tech Stack
-- **LLM Provider:** `anthropic` (Claude — Haiku/Sonnet/Opus; default Haiku 4.5)
-- **Data Validation:** `pydantic` (structured output enforcement during planning)
-- **Office Formats:** `python-docx`, `openpyxl`, `python-pptx`
-- **PDF Handling:** `reportlab` (generation), `pypdf` (encryption)
-- **Package Management:** `uv`
+- **Python 3.14+**
+- **[uv](https://github.com/astral-sh/uv)** for dependency management
+- **Anthropic API key** (required for `generate`)
+- **Thinkst Canary API key** (optional — only required for `thinkst` subcommands; see [API role](#which-thinkst-api-role) below)
 
 
 ## Installation
-Requires [uv](https://github.com/astral-sh/uv) and Python 3.14+.
 
 ```sh
 git clone https://github.com/lopes/foxglove
@@ -53,125 +36,127 @@ cd foxglove
 uv sync
 ```
 
-Set your Anthropic API key:
+
+## Environment Setup
+
 ```sh
-export ANTHROPIC_API_KEY="sk-ant-your-api-key-here"
+# Required for foxglove generate
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# Optional — only for foxglove thinkst subcommands
+export THINKST_API_KEY="..."
 ```
+
+Both follow the standard `<VENDOR>_API_KEY` pattern. Most operators already have `ANTHROPIC_API_KEY` exported for other Claude tools — the same value works here.
+
+### Which Thinkst API role?
+
+Foxglove needs an **Admin** key (create/delete canarytokens are full API operations per Thinkst's role matrix). Prefer **flock-scoped Admin** over console-scoped — smaller blast radius if the key ever leaks. See [Thinkst — How does the API work?](https://help.canary.tools/hc/en-gb/articles/360012727537-How-does-the-API-work) and [Flock API Keys](https://help.canary.tools/hc/en-gb/articles/7111549805213-Flock-API-Keys).
+
+
+## Supported Formats
+
+`PDF`, `Encrypted PDF` (password-protected), `DOCX`, `XLSX`, `PPTX`, `Markdown`, `CONF`, `JSON`, `XML`
 
 
 ## Usage
 
-The CLI is structured around two subcommands: `generate` (honeyfiles) and `thinkst` (honeytokens on a Thinkst Canary console).
+The CLI has two subcommands:
 
-### `foxglove generate`
-```sh
-uv run python -m foxglove generate \
-  --base-dir /tmp \
-  --operation op_alpha \
-  --num-files 99 \
-  --formats pdf,epdf,docx,xlsx,conf \
-  --teams it,infra,financial \
-  --company "mid-sized fintech in Luxembourg, focusing at lending money to people, <50 employees" \
-  --file-content "files present information in IT infra, from stack used (MS-AD, zabbix, Cisco ISE, Jamf), including some credentials and old URLs/IP addresses. financial info in the file server includes financial reports and confidential board decision and tax info." \
-  [--honeytokens https://x.canary.tools/x.gif,host.y.canarytokens.com]
+```
+foxglove generate ...    # produce a directory of honeyfiles
+foxglove thinkst ...     # mint / list / remove honeytokens on a Canary console
 ```
 
-This generates a structured directory at `/tmp/op_alpha` containing subfolders and 99 context-aware honeyfiles. When `--honeytokens` is given, the LLM is instructed to weave each token naturally into honeyfile content (as links, references, contact details, or footers).
+### Use case 1 — Generate a honeyfile directory (Anthropic only)
 
-#### Parameters
-| Parameter        | Required | Description                                                                                 | Default                    |
-|------------------|----------|---------------------------------------------------------------------------------------------|----------------------------|
-| `--base-dir`     | Yes      | Existing, writable directory for output                                                     | —                          |
-| `--operation`    | Yes      | Operation name (filesystem-safe identifier)                                                 | —                          |
-| `--num-files`    | Yes      | Number of honeyfiles to generate (1–200)                                                    | —                          |
-| `--formats`      | Yes      | Comma-separated formats (pdf,epdf,docx,xlsx,pptx,md,conf,json,xml)                          | —                          |
-| `--teams`        | Yes      | Comma-separated team names for context                                                      | —                          |
-| `--company`      | Yes      | Company description for context (max 256 chars)                                             | —                          |
-| `--file-content` | Yes      | Description of expected content (max 1024 chars)                                            | —                          |
-| `--model`        | No       | Anthropic model identifier                                                                  | `claude-haiku-4-5` |
-| `--passwords`    | No       | Comma-separated passwords for encrypted PDFs                                                | `abc123,root`              |
-| `--resume`       | No       | Resume a previously interrupted operation                                                   | `false`                    |
-| `--dry-run`      | No       | Show plan without writing honeyfiles                                                        | `false`                    |
-| `--honeytokens`  | No       | Comma-separated callback URLs/hostnames to weave into honeyfile content (≤20 entries, ≤256 chars each, no whitespace) | —             |
-
-#### Dry Run
-Preview the campaign plan without creating any honeyfiles:
+Quickest path to value. Drop a credible-looking IT documentation tree into `/tmp/op_alpha`.
 
 ```sh
 uv run python -m foxglove generate \
   --base-dir /tmp \
   --operation op_alpha \
-  --num-files 10 \
-  --formats md,conf,json \
-  --teams infosec \
-  --company "small IT company" \
-  --file-content "internal documentation" \
+  --num-files 20 \
+  --formats pdf,docx,xlsx,md,conf \
+  --teams it,infra,financial \
+  --company "mid-sized fintech in Luxembourg, ~50 employees" \
+  --file-content "internal IT and finance docs: stack details (MS-AD, Zabbix, Cisco ISE, Jamf), quarterly reports, access policies"
+```
+
+Result: 20 honeyfiles under `/tmp/op_alpha/`, plus a `MANIFEST.json` recording the campaign parameters, the LLM-generated authors pool, and the file list. Each document carries plausible metadata (author drawn from the pool, created/modified timestamps jittered 1–25 days apart, filesystem mtime aligned).
+
+### Use case 2 — Preview a campaign before committing (dry run)
+
+For larger operations, preview the LLM's plan without writing anything to disk or running content generation.
+
+```sh
+uv run python -m foxglove generate \
+  --base-dir /tmp \
+  --operation op_preview \
+  --num-files 100 \
+  --formats pdf,epdf,docx,xlsx,pptx,md \
+  --teams legal,hr,finance,engineering \
+  --company "global SaaS, ~2000 employees, Series D" \
+  --file-content "corporate documents covering legal contracts, HR policies, payroll, and engineering runbooks" \
   --dry-run
 ```
 
-#### Resume
-If generation is interrupted, resume where you left off by appending `--resume` to the same `generate` invocation.
+The dry-run prints every planned file (path, format, summary) so you can sanity-check coverage and tone before paying for the full content-generation pass. Pair with `--resume` later to continue from where you left off if interrupted.
 
-### `foxglove thinkst`
+### Use case 3 — The twofold workflow (honeytoken → honeyfile)
 
-Mints, lists, and removes honeytokens on a Thinkst Canary console. Foxglove tags each honeytoken's memo with `#foxglove` so you can later list and remove only the ones it created.
-
-Required env var: `THINKST_API_KEY` (your Canary API auth token).
-
-#### Which Canary API role?
-
-Foxglove needs **Admin**. Both `create` and `remove` are "full API operations" per Thinkst's role matrix; Analyst can only delete *alerts*, not canarytokens themselves, and Read-Only can't write at all.
-
-Recommended: **flock-scoped** Admin key over a console-scoped one. If foxglove only targets a single flock, scope the key to that flock so a leaked key can't touch other flocks' tokens.
-
-If you ever decouple creation from list/remove (e.g. an automation only mints, humans clean up via the Canary UI), look at Thinkst's specialized **Canarytoken Deploy** key type instead — it's narrower than Admin. Doesn't fit foxglove's current flow because foxglove also lists/removes.
-
-See [Thinkst — How does the API work?](https://help.canary.tools/hc/en-gb/articles/360012727537-How-does-the-API-work) and [Flock API Keys](https://help.canary.tools/hc/en-gb/articles/7111549805213-Flock-API-Keys).
-
-`--domain-hash` is your Console's DOMAIN — the unique hash that prefixes its URL. In `https://acme.canary.tools/api/v1/...`, the domain-hash is `acme`.
+The marquee use case. Mint a Thinkst callback, then weave it into the generated content so the LLM places it as a plausible link, contact reference, or footer URL. When the adversary opens the document and follows the link, your Canary console alerts.
 
 ```sh
-# Mint a honeytoken
+# 1) Mint a callback on your Canary console
 uv run python -m foxglove thinkst create \
-  --domain-hash acme \
+  --domain-hash <your-domain-hash> \
   --kind dns \
   --flock flock:default \
-  --memo "Q3 billing report"
+  --memo "decoy quarterly report deployment"
+#  → prints the canarytoken id + callback hostname
 
-# List Foxglove-tagged honeytokens
-uv run python -m foxglove thinkst list --domain-hash acme [--flock flock:abc] [--kind dns] [--json]
+# 2) Generate honeyfiles, embedding the callback
+uv run python -m foxglove generate \
+  --base-dir /tmp \
+  --operation q3_decoys \
+  --num-files 5 \
+  --formats pdf,docx,xlsx \
+  --teams finance,executive \
+  --company "..." \
+  --file-content "Q3 board pack, revenue breakdown, strategy memos" \
+  --honeytokens <callback-hostname-from-step-1>
 
-# Remove one by id
-uv run python -m foxglove thinkst remove --domain-hash acme <canarytoken-id>
+# 3) (later) audit foxglove-tagged honeytokens on the console
+uv run python -m foxglove thinkst list --domain-hash <your-domain-hash>
+
+# 4) (end of engagement) clean up
+uv run python -m foxglove thinkst remove --domain-hash <your-domain-hash> <canarytoken-id>
 ```
 
-Supported `--kind` values (v1, callback-only): `dns`, `http`, `aws-id`, `slack-api`, `qr-code`, `windows-dir`, `wireguard`, `credit-card`, `mysql-dump`, `svn`, `sql`.
-
-### Exit Codes
-| Code | Meaning                                            |
-|------|----------------------------------------------------|
-| 0    | Success                                            |
-| 1    | CLI validation error                               |
-| 2    | Environment error (missing API key)                |
-| 3    | API error (network, auth, rate limit)              |
-| 4    | Partial completion (some honeyfiles failed)        |
-| 5    | Planning error (invalid LLM response)              |
-| 6    | Thinkst API error (auth, 4xx, 5xx, incidents block)|
+Tokens minted by Foxglove are tagged in their memo with `#foxglove` so `thinkst list` filters cleanly to just the ones it created. Pass `--json` to `thinkst list` if you want machine-readable output for scripting cleanup.
 
 
-## Development
-```sh
-uv run pytest              # Run all tests
-uv run pytest -k "test_x"  # Run specific test
-```
+## How it Works
 
-See [DESIGN.md](DESIGN.md) for the full technical specification and [CLAUDE.md](CLAUDE.md) for development guidelines.
+1. **Context Ingestion** — operator-defined parameters (target environment, teams, content theme) flow into a Pydantic-validated campaign object.
+2. **Campaign Planning** — Claude produces a structured roadmap of file paths, formats, and summaries plus a small pool of culturally-coherent author names. Pydantic-enforced JSON guarantees the LLM output maps cleanly into internal types.
+3. **Content Generation** — Foxglove iterates through the plan, asking Claude to write believable per-file content. When `--honeytokens` is set, the LLM is instructed to weave them naturally into the text — never as an out-of-band block.
+4. **File Assembly** — the writers (`python-docx`, `openpyxl`, `python-pptx`, `reportlab`, `pypdf`) materialise each format with realistic document metadata (author, created/modified timestamps jittered like real authoring lifecycles) and the filesystem mtime aligned to match.
+
+For full architectural detail — exit codes, manifest schema, resume/dry-run semantics, Canary endpoint mapping, supported honeytoken kinds — see [DESIGN.md](DESIGN.md).
 
 
-## Known Limitations
-- **Context Window Constraints:** For large operations (100+ files), Foxglove batches the campaign planning phase in groups of 50 to maintain output quality.
-- **Sequential Generation:** Files are generated one at a time (no concurrency in v1).
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Short version: strict TDD, scoped commits, immutable data, no comments unless the *why* is non-obvious.
+
+
+## Security
+
+For vulnerability reports and disclosure practices, see [SECURITY.md](SECURITY.md).
 
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+MIT — see [LICENSE](LICENSE).

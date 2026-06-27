@@ -61,6 +61,9 @@ def run(argv: list[str]) -> int:
     if isinstance(result, CliError):
         print(f"Error: {result.message}", file=sys.stderr)
         return EXIT_CLI_ERROR
+    if not isinstance(result, CliArgs):
+        print("Error: thinkst dispatch is not yet implemented", file=sys.stderr)
+        return EXIT_CLI_ERROR
 
     cli = result
 

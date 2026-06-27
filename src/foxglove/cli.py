@@ -2,8 +2,12 @@ import argparse
 import os
 import re
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from foxglove.models import DEFAULT_MODEL, DEFAULT_PASSWORDS, MAX_FILES, SUPPORTED_FORMATS
+
+if TYPE_CHECKING:
+    from foxglove.thinkst.cli import ThinkstCreateArgs
 
 OPERATION_PATTERN: re.Pattern[str] = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,254}$")
 SUBCOMMANDS: frozenset[str] = frozenset({"generate", "thinkst"})
@@ -96,7 +100,7 @@ def _validate_generate(args: argparse.Namespace) -> CliArgs | CliError:
     )
 
 
-def parse_args(argv: list[str]) -> CliArgs | CliError:
+def parse_args(argv: list[str]) -> "CliArgs | ThinkstCreateArgs | CliError":
     if not argv:
         return CliError(
             message="no subcommand given; use 'foxglove generate ...' or 'foxglove thinkst ...'"
@@ -111,19 +115,14 @@ def parse_args(argv: list[str]) -> CliArgs | CliError:
             )
         return CliError(message=f"unknown command '{argv[0]}'; use 'generate' or 'thinkst'")
 
-    parser = argparse.ArgumentParser(prog="foxglove", exit_on_error=False)
-    sub = parser.add_subparsers(dest="command", required=True)
+    if argv[0] == "thinkst":
+        from foxglove.thinkst.cli import parse_thinkst_args
+        return parse_thinkst_args(argv)
 
-    gen = sub.add_parser("generate", exit_on_error=False)
-    _add_generate_arguments(gen)
-
-    sub.add_parser("thinkst", exit_on_error=False)
-
+    parser = argparse.ArgumentParser(prog="foxglove generate", exit_on_error=False)
+    _add_generate_arguments(parser)
     try:
-        args = parser.parse_args(argv)
+        args = parser.parse_args(argv[1:])
     except argparse.ArgumentError as e:
         return CliError(message=str(e))
-
-    if args.command == "generate":
-        return _validate_generate(args)
-    return CliError(message=f"'{args.command}' subcommand is not yet implemented")
+    return _validate_generate(args)

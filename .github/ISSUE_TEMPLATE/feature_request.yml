@@ -1,0 +1,30 @@
+name: Feature / Enhancement
+description: "Propose a new honeyfile format, deception capability, or integration for Foxglove"
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What gap, limitation, or operational friction exists today, and why does solving it matter?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: "Architectural background, MITRE Engage alignment, affected modules (`src/`, `tests/`), invariants, and open questions."
+    validations:
+      required: true
+  - type: textarea
+    id: dod
+    attributes:
+      label: Definition of Done
+      description: Concrete deliverables, invariants, and verification criteria required to close this issue.
+      value: |
+        - [ ] Design questions resolved and approach validated against `DESIGN.md`
+        - [ ] Unit and adversarial tests added with synthetic-only fixtures (`uv run pytest`)
+        - [ ] Documentation updated (`README.md`, `DESIGN.md`, `AGENTS.md` if applicable)
+        - [ ] All CI and security gates pass
+    validations:
+      required: true

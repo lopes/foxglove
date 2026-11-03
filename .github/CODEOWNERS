@@ -1,0 +1,14 @@
+# Global default code owners
+* @lopes
+
+# Honeyfile Generation & Thinkst Canary Integration
+/src/ @lopes
+/tests/ @lopes
+
+# Architecture, Threat Model & Agent Guidance
+/AGENTS.md @lopes
+/DESIGN.md @lopes
+/SECURITY.md @lopes
+
+# CI/CD Workflows & Repository Governance
+/.github/ @lopes

@@ -1,0 +1,50 @@
+name: Bug Report
+description: "Report a defect in honeyfile generation, Thinkst Canary token minting, or CLI execution"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report a defect, regression, or unexpected behavior in Foxglove.
+  - type: dropdown
+    id: subsystem
+    attributes:
+      label: Affected Subsystem
+      options:
+        - "Honeyfile Generation & Document Assembly (PDF, DOCX, XLSX, etc.)"
+        - "Thinkst Canary Honeytoken Minting & Embedding"
+        - "LLM Campaign Planning & Structured Output"
+        - "CLI & Configuration Validation"
+        - "CI/CD Workflows (.github/workflows/)"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description of the Bug
+      description: Clear and concise description of what is broken.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Exact commands, inputs, or steps that trigger the issue.
+      placeholder: |
+        1. Run `uv run foxglove generate ...`
+        2. Observe error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Terminal Output / Error Logs
+      description: Paste relevant terminal output or stack trace here.
+      render: shell

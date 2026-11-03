@@ -13,7 +13,7 @@ dependencies = [
     "python-pptx",
     "reportlab",
     "pypdf",
-    "truststore>=0.10.4",
+    "truststore>=0.10.5",
 ]
 
 [dependency-groups]
